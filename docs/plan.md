@@ -2,7 +2,9 @@
 
 ## In progress
 
-- [ ] Set up environment: build Apptainer container + download local dataset copy from Tei's CERNBox share (link received 2026-07-09; see docs/context.md)
+- [ ] Phase 1 histogram reproduction (μ mode, lumi sweep) — ready to run on CPU; **on hold** (2026-07-09)
+- [ ] Phase 1 NSBI reproduction — **path A** (Tei's checkpoints); waiting on his `run/h4l/` dir (see
+      docs/env-setup-and-code-walkthrough.md "What to request from Tei"). GPU node available.
 
 ## Backlog
 
@@ -43,3 +45,7 @@
 - [x] Bootstrap SBI_shortcomings project container (2026-06-02)
 - [x] Clone asimov-aymptotics-check fork with real code + Tei's reference results (2026-06-02)
 - [x] Obtain CERNBox dataset location from Tei (2026-07-09): `zz4l/ggzz4l_sm/` in his public share
+- [x] Environment set up (2026-07-09): dataset downloaded locally, Apptainer container built + verified
+      (imports OK, CPU histogram path runnable), Tei's code walkthrough documented
+- [x] Publish container repo to GitHub (2026-07-09): private `martafsilva31/SBI_shortcomings`, clean history
+- [x] Confirm CARL configs not recoverable locally/CERNBox/history (2026-07-09) → NSBI via path A

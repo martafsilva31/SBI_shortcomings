@@ -41,6 +41,12 @@
   (project area, gitignored). Rebuild in progress.
 - Reminder: **no GPU on this node** — training will need a GPU node; to be checked what actually
   requires GPU vs runs on CPU (see walkthrough).
+- **Build succeeded** (`ml4fp-sbi-tutorial.sif`, 4.1 GB). Verified inside the container:
+  torch 2.2.1 (`cuda.is_available() = False`, expected), lightning 2.6.5, sklearn 1.7.2, scikit-hep
+  (hist/vector) all import; the project's top-level packages `physics`, `stats`, `datasets`, `nsbi`
+  all import from the repo-root cwd **with no `pip install` needed** — so the home-quota issue is
+  moot for running the code. **Histogram path is fully runnable on this (CPU-only) node.** Run with
+  `apptainer exec ml4fp-sbi-tutorial.sif python3 …` from the sub-repo root.
 
 ### 2026-07-09 — heads-up from Tei (relayed by Marta)
 
@@ -130,7 +136,7 @@
   all authored by Tae Hyoun Park). No `upstream` remote to his original (optional — for pulling
   his future updates).
 
-### 2026-07-09 — Tei's slides (`asimov_vs_medtoys_test_statistic_studies.pdf`, 7 pp.)
+### 2026-07-09 — Tei's slides (`docs/presentations/asimov_vs_medtoys_test_statistic_studies.pdf`, 7 pp.)
 
 - Confirms the whole setup: SBI mixture model (both forms in context.md), yields table (exact match),
   toy recipe `w_toy ~ P(λ=w)`, and the two likelihoods. Slide 3 writes the **intended** NSBI
@@ -147,17 +153,79 @@
   which reads as the opposite sign. Resolve during reproduction before it propagates to Notion; these
   are the buggy-code (no-Poisson-term) curves, so re-check after adding the term too.
 
+### 2026-07-09 — CARL config hunt (are the hyperparameters recoverable? — checked, no)
+
+Searched every place they could hide; the CARL hyperparameters/checkpoints are **not** in anything
+we have:
+- Local sub-repo working tree: no `*.yaml/*.ckpt/hparams*` (only the 4 result `.pt` files).
+- Sub-repo **git history** (all 4 commits): nothing config-like ever committed or deleted.
+- The committed `.pt` files: all **plain scan tensors** (`poi_scan`/`mu_scan` = (101,); `nll_scan_asimov`
+  = (101,); `nll_scan_toys` = (101,200)) — no `state_dict`, no hparams.
+- Notebook **outputs**: no architecture/hparam printout — the NSBI notebook (cell 5) loads models via
+  `carl.utils.load_results('/ptmp/mpp/taepa/stat/ml4fp-sbi-tutorial/run/h4l', …)` →
+  `CARL.load_from_checkpoint`, so the hyperparameters live only inside those `.ckpt` files (baked in by
+  `save_hyperparameters()`, `models/carl.py:11`) and never appear in the notebook.
+- **CERNBox share**: only CSVs — no models/run dirs. (New finds while looking: `zz4l/ggZZ_{sig,bkg,sbi,int}/analyzed.csv`
+  per-component analyzed files, and `zz4l/observed_mu{0p4,2p5}/observed_{0..47}.csv` = 48 pre-generated
+  pseudo-datasets each at injected μ=0.4 and μ=2.5. Not needed for the ggzz4l_sm reproduction, but
+  relevant if we later do observed-data fits.)
+
+**What must be supplied to train** (`CARL.__init__`, no defaults): `n_layers`, `n_nodes`,
+`learning_rate` (n_features=16 auto-linked from `data.features`); plus `max_epochs`, `batch_size`
+(BalancedDataModule default 32), `seed`.
+
+**Correction to earlier "hard blocker" framing:** Tei's exact config is required only for a *bit-exact*
+match of his committed curves. It is **not** required to reproduce the *phenomenon* — since every
+checkpoint self-describes via `save_hyperparameters()` and the NSBI-overconfidence effect is claimed
+to be intrinsic (not tuned), we can pick sensible hyperparameters (e.g. n_layers≈3, n_nodes≈64–128,
+lr≈1e-3) and train our own CARL. Two paths: **(A)** get Tei's checkpoints/config from the MPP cluster
+(`…/run/h4l/{sig_over_bkg,sbi_over_bkg}/lightning_logs/version_*/`) for exact repro; **(B)** train our
+own for an independent repro. Both still need a **GPU node**.
+
+## Decisions (2026-07-09)
+
+- **NSBI → path A** (Tei's checkpoints, bit-exact). **GPU node available** (access details TBD from Marta).
+- Consequence: path A is **inference-only — no training needed**. Load Tei's run dir with
+  `carl.utils.load_results`, run the 2 CARL forward passes (~576k events, seconds on GPU), build the
+  NSBI NLL scan. So NSBI reproduction is fast once his files land; the GPU is for inference
+  (`get_likelihood_ratio` hardcodes `accelerator='gpu'`, `utils.py:49`), not heavy training.
+
+## What to request from Tei (exact — so no second round-trip)
+
+`load_results(run_dir, run_name)` (`nsbi/carl/utils.py:11-46`) needs, for **each** of the two run
+names `sig_over_bkg` and `sbi_over_bkg`, the full folder `run/h4l/<run_name>/` containing:
+- `events_numerator_val.pkl`, `events_denominator_val.pkl`,
+  `events_numerator_test.pkl`, `events_denominator_test.pkl`  (pickled `mcfm.Process` splits)
+- `scaler.pkl`  (the fitted `StandardScaler`)
+- `lightning_logs/version_*/checkpoints/epoch=*-val_loss=*.ckpt`  (it auto-picks the largest-epoch one)
+
+i.e. **the entire `…/run/h4l/` tree** (both sub-run dirs) is the clean thing to copy. With it we don't
+need his hyperparameters separately — they're inside the `.ckpt` via `save_hyperparameters()`.
+
 ## Open questions for Tei
 
-1. CARL training configs (hyperparameters/seed/epochs or a checkpoint) — hard blocker for NSBI.
+1. Copy of his full `…/run/h4l/{sig_over_bkg,sbi_over_bkg}/` run dir (files listed above) — for path A.
 2. Which (poi, lumi) points to reproduce exactly? Committed notebooks have hist@(θ,1000) and
    NSBI@(μ,300), but the headline result is μ at 1–10 fb⁻¹.
 3. Meaning of the `[2, 1.83]` factors in `ggzz4l_xs.json` (flavour combinations × k-factor?).
+4. What are the CERNBox `observed_mu{0p4,2p5}/` sets (48 pseudo-datasets each) and `ggZZ_*/analyzed.csv`
+   for — a separate observed-data study?
 
-## Next
+## Status & next
 
-- Verify container build + Python env inside it (home quota may block `pip install --user`;
-  fallback: `PYTHONPATH=<sub-repo>` — pip install only covers `physics`+`stats` anyway).
-- On approval: run the histogram reproduction (μ mode, lumi sweep) — the Asimov ≈ median(toys)
-  sanity check — and log results here.
-- Ask Tei the open questions above; then NSBI reproduction on a GPU node.
+Environment setup **complete**: dataset local, container built + verified, code understood. Container
+repo **published**: `git@github.com:martafsilva31/SBI_shortcomings.git` (private), `main` pushed at
+commit `318ebc4`, zero AI traces. Histogram reproduction is unblocked on this CPU node but **on hold**
+(Marta's call, 2026-07-09).
+
+CARL configs: confirmed **not recoverable** from any accessible source (see config-hunt above) — they
+live only in Tei's MPP-cluster checkpoints. Not a hard blocker: we can train our own (path B) or fetch
+his (path A). Either way NSBI training needs a **GPU node**.
+
+Then (on the go-ahead):
+- **Histogram reproduction** (μ mode, lumi sweep 1/10/100/1000 fb⁻¹, CPU): symlink `data/sm`, archive
+  Tei's reference `.pt` into `reference/`, loop lumi in `notebooks/hist/fit_asimov_and_toys.ipynb`,
+  outputs to gitignored `output/hist/`. Reproduce slide 6 (Asimov ≈ median) and settle the
+  direction question at §"Direction to verify".
+- **NSBI reproduction** on a GPU node — path A (Tei's checkpoints) or path B (train our own CARL with
+  sensible hyperparameters); then add the extended Poisson term and re-run.
