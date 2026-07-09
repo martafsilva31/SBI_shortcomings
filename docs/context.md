@@ -126,6 +126,8 @@ regime — not a training artefact that can be fixed by better regularisation al
 ## Key references
 
 - Cranmer, Pavez, Louppe — "Approximating Likelihood Ratios with Calibrated Discriminative
-  Classifiers" (CARL) [REF NEEDED]
-- Cowan et al. — "Asymptotic formulae for likelihood-based tests of new physics" [REF NEEDED]
-- Tei's slides: `asimov_vs_medtoys_test_statistic_studies.pdf` (shared at first meeting 2026-05-20)
+  Classifiers" (CARL), arXiv:1506.02169 (arXiv-only)
+- Cowan, Cranmer, Gross, Vitells — "Asymptotic formulae for likelihood-based tests of new
+  physics", Eur. Phys. J. C 71 (2011) 1554, arXiv:1007.1727; Erratum: Eur. Phys. J. C 73 (2013) 2501
+- Tei's slides: `docs/presentations/asimov_vs_medtoys_test_statistic_studies.pdf` (shared at first meeting 2026-05-20)
+- Full annotated bibliography: `docs/notes/literature.md` (PDFs in `docs/refs/`)
