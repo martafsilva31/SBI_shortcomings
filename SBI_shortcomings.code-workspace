@@ -1,0 +1,8 @@
+{
+	"folders": [
+		{ "name": "SBI_shortcomings", "path": "." },
+		{ "name": "asimov-aymptotics-check", "path": "asimov-aymptotics-check" },
+		{ "name": "~ global", "path": ".." }
+	],
+	"settings": { "files.exclude": { "output": true, "*.log": true } }
+}

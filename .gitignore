@@ -1,0 +1,30 @@
+# ── Sub-repos (independent git repos — NOT tracked by container) ─────────
+asimov-aymptotics-check/
+
+# ── Generated outputs (belong inside sub-repos, not at container level) ──
+output/
+plots/
+ntuples/
+*.root
+
+# ── Local dataset copy (CERNBox is the source of truth — never commit) ───
+data/
+
+# ── PDF / plot files ──────────────────────────────────────────────────────
+*.pdf
+*.png
+*.eps
+
+# ── Python ────────────────────────────────────────────────────────────────
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# ── ATLAS ─────────────────────────────────────────────────────────────────
+.asetup.save
+build/
+
+# ── Editor / OS ───────────────────────────────────────────────────────────
+.DS_Store
+*.swp
