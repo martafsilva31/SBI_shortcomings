@@ -1,0 +1,26 @@
+# Path-B CARL training: two classifiers, one GPU job each (docs/nsbi-repro-prep.md §1).
+universe                = vanilla
+executable              = /project/atlas/Users/mfernand/SBI_shortcomings/scripts/nsbi_pathB_train.sh
+arguments               = $(run_name) $(num_csv)
+
+# Nikhef requirements: run inside our analysis container (condor handles GPU passthrough),
+# and declare a job category (walltime class)
++SingularityImage       = "/project/atlas/Users/mfernand/SBI_shortcomings/asimov-aymptotics-check/ml4fp-sbi-tutorial.sif"
++JobCategory            = "medium"
+
+request_gpus            = 1
+request_cpus            = 8
+request_memory          = 32G
+request_disk            = 8G
+
+log                     = /project/atlas/Users/mfernand/SBI_shortcomings/output/nsbi-pathB/condor/$(run_name).log
+output                  = /project/atlas/Users/mfernand/SBI_shortcomings/output/nsbi-pathB/condor/$(run_name).out
+error                   = /project/atlas/Users/mfernand/SBI_shortcomings/output/nsbi-pathB/condor/$(run_name).err
+
+should_transfer_files   = NO
+getenv                  = False
+
+queue run_name, num_csv from (
+  sig_over_bkg, /project/atlas/Users/mfernand/SBI_shortcomings/data/zz4l/ggzz4l_sm/ggzz4l_sig.csv
+  sbi_over_bkg, /project/atlas/Users/mfernand/SBI_shortcomings/data/zz4l/ggzz4l_sm/ggzz4l_sbi.csv
+)
