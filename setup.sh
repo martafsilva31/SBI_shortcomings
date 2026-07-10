@@ -16,13 +16,15 @@ export DATASET_DIR="$PROJECT_ROOT/data/zz4l/ggzz4l_sm"
 # First time — build the container (needs Apptainer and ~10 min):
 #   apptainer build "$ANALYSIS_CODE/ml4fp-sbi-tutorial.sif" "$ANALYSIS_CODE/container.def"
 #
-# Every session — launch with GPU access:
-#   apptainer shell --nv "$ANALYSIS_CODE/ml4fp-sbi-tutorial.sif"
+# Every session — launch with GPU access. PYTHONNOUSERSITE=1 is REQUIRED: apptainer binds $HOME,
+# and stray ~/.local packages otherwise shadow the container (a corrupt one broke mplhep,
+# 2026-07-10 — see docs/hist-reproduction.md):
+#   apptainer shell --nv --env PYTHONNOUSERSITE=1 "$ANALYSIS_CODE/ml4fp-sbi-tutorial.sif"
 #
 # Inside the container — install the package (first time only):
 #   pip install -e "$ANALYSIS_CODE"
 
 echo "Project root : $PROJECT_ROOT"
 echo "Analysis code: $ANALYSIS_CODE"
-echo "To start: apptainer shell --nv $ANALYSIS_CODE/ml4fp-sbi-tutorial.sif"
+echo "To start: apptainer shell --nv --env PYTHONNOUSERSITE=1 $ANALYSIS_CODE/ml4fp-sbi-tutorial.sif"
 [[ -f "$ANALYSIS_CODE/ml4fp-sbi-tutorial.sif" ]] || echo "NOTE: container .sif not built yet — run the apptainer build command above"

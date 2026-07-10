@@ -55,9 +55,9 @@ the roadmap. No daily logbook.
 
 Study of NSBI (Neural Simulation-Based Inference) failure in the non-asymptotic regime.
 Process: off-shell gg → H* → ZZ → 4ℓ (parton level, per-event reweightable).
-Key result: at 1–10 fb⁻¹, NSBI NLL scan is systematically narrower than the median of toy
-pseudo-experiments (overconfident), while histogram analysis satisfies Asimov ≈ median(toys)
-at all luminosities. Root cause: high-dimensional NN space is non-asymptotic even with
+Key result: at 1–10 fb⁻¹, the median of the toy NLL scans is systematically narrower/steeper than
+the NSBI Asimov scan (toy-level overconfidence; direction measured 2026-07-10 — width ratio 0.874
+at 300 fb⁻¹), while histogram analysis satisfies Asimov ≈ median(toys) at all luminosities. Root cause: high-dimensional NN space is non-asymptotic even with
 O(100) total events.
 
 POI: μ (signal strength modifier). No NPs in current setup.

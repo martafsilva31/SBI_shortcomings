@@ -2,24 +2,28 @@
 
 ## In progress
 
-- [ ] Phase 1 histogram reproduction (μ mode, lumi sweep) — ready to run on CPU; **on hold** (2026-07-09)
 - [ ] Phase 1 NSBI reproduction — **path A** (Tei's checkpoints); waiting on his `run/h4l/` dir (see
-      docs/env-setup-and-code-walkthrough.md "What to request from Tei"). GPU node available.
+      docs/env-setup-and-code-walkthrough.md §8). GPU node available. Ready when it lands: patch
+      drafts + path B launch kit in docs/nsbi-repro-prep.md
+- [ ] Env-setup Logbook entry — local draft rewritten via /writeup (2026-07-10); awaiting Marta's
+      format sign-off (first entry of the project) + Notion connector auth before the push
 
 ## Backlog
 
 ### Phase 1 — Reproduce Tei's results
 
-- [ ] Reproduce histogram NLL scan at 1/10/100/1000 fb⁻¹ — verify Asimov ≈ median(toys)
-- [ ] Reproduce NSBI NLL scan at same luminosities — verify Asimov ≠ median(toys) at 1–10 fb⁻¹
-- [ ] Add the missing extended Poisson term to the NSBI NLL (flagged by Tei 2026-07-09) and re-run — only after reproducing his results as-is
-- [ ] Document reproduction results in first logbook entry
+- [ ] Reproduce NSBI NLL scan at 1/10/100/1000 fb⁻¹ — verify Asimov ≠ median(toys) at 1–10 fb⁻¹
+- [ ] Add the missing extended Poisson term to the NSBI NLL (flagged by Tei 2026-07-09) and re-run — only after reproducing his results as-is (patch drafted: docs/nsbi-repro-prep.md §2)
+- [ ] Document reproduction results in first logbook entry (hist study note ready: docs/hist-reproduction.md; env-setup entry drafted, see In progress)
 
 ### Phase 2 — Dimensionality study
 
-- [ ] Implement 4D histogram analysis (extend beyond 1D M₄ℓ) at 1 fb⁻¹
-- [ ] Compare Asimov vs. median(toys) for 1D, 2D, 3D, 4D histograms to isolate dimensionality effect
-- [ ] Plot NLL scan curves for all histogram dimensionalities
+- [x] Implement 1D–4D histogram analysis, 4 luminosities + fixed-16-bin control (2026-07-10):
+      notebooks/dimensionality_study.ipynb — headline: width ratio 1.08 (1D) → 0.44 (4D) at
+      1000 fb⁻¹, Asimov property breaks with cell count, no ML involved
+- [ ] Refine the occupancy metric (mean occupancy does not collapse the grid — distribution matters)
+- [ ] Toy-count scaling check (200 → 1000 toys) on the extreme points
+- [ ] NSBI overlay on the same panels (after path-B reproduction)
 
 ### Phase 3 — Proposed fixes
 
@@ -41,6 +45,19 @@
 
 ## Done
 
+- [x] Histogram reproduction (2026-07-10): μ mode at 1/10/100/1000 fb⁻¹ — Asimov ≈ median(toys)
+      confirmed at all four points (1σ width ratios 0.985/1.054 where intervals close; Asimov
+      μ̂ = 1.000 exactly everywhere). Study note: docs/hist-reproduction.md
+- [x] NSBI direction question resolved (2026-07-10): median(toys) is the narrower/steeper curve
+      (width ratio 0.874 at 300 fb⁻¹, measured on Tei's committed scans); context.md clarified
+- [x] NSBI prep drafts (2026-07-10): path B launch kit + extended-Poisson-term + chunk-over-toys
+      patch drafts — docs/nsbi-repro-prep.md (nothing applied or trained)
+- [x] Phase 2 design note (2026-07-10): docs/dimensionality-study.md (occupancy grid, observables,
+      reuse-only implementation route)
+- [x] Foundations extended (2026-07-10): new §§12–14 (SBI overconfidence & coverage, Bartlett
+      correction, toy-ensemble + deep sets) in docs/notes/sbi_foundations.md
+- [x] [2, 1.83] xs factors (2026-07-10): proposed answer documented (channel counting × common
+      gg→ZZ k-factor) — awaiting Tei's confirmation
 - [x] First team meeting (2026-05-20): established key finding, agreed on methodology and next steps
 - [x] Bootstrap SBI_shortcomings project container (2026-06-02)
 - [x] Clone asimov-aymptotics-check fork with real code + Tei's reference results (2026-06-02)
