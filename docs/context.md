@@ -86,7 +86,9 @@ p_SBI(x|μ) = [(μ-√μ) ν_S p_S(x) + √μ ν_SBI p_SBI(x) + (1-√μ) ν_B p
 ## Key finding (first meeting, 2026-05-20)
 
 At 1–10 fb⁻¹, the NSBI median(toys) diverges significantly from the Asimov prediction:
-NLL curves are systematically steeper (NSBI is overconfident). Histogram analysis shows
+the median-of-toys NLL curve is systematically steeper/narrower than the Asimov curve, i.e. each
+toy analysis is overconfident and the Asimov understates the toys' claimed sensitivity (direction
+verified 2026-07-10 on Tei's committed 300 fb⁻¹ scans; see docs/hist-reproduction.md). Histogram analysis shows
 Asimov ≈ median(toys) at all luminosities. Convergence of NSBI only occurs at ~1000 fb⁻¹
 where the Poisson rate term dominates. Root cause: NN density ratios are trained on a fixed
 Asimov-like sample and cannot account for statistical fluctuations in sparse high-dimensional
