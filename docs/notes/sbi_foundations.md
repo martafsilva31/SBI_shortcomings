@@ -19,12 +19,15 @@
 | 7 | [The two likelihoods, side by side](#7-the-two-likelihoods-side-by-side) | Both are extended likelihoods; the Poisson rate term carries the luminosity dependence, the shape term the per-event information. |
 | 8 | [Toy pseudo-experiments and the test protocol](#8-toy-pseudo-experiments-and-the-test-protocol) | Per-event Poisson weight resampling; "median of toys" means the pointwise-per-μ median of the toy scan curves — a definition the study must own. |
 | 9 | [The evidence](#9-the-evidence) | Histogram: Asimov ≈ median(toys) at every luminosity. NSBI: a clear departure at 1–100 fb⁻¹, gone at 1000 fb⁻¹. |
-| 10 | [Known caveats on the evidence](#10-known-caveats-on-the-evidence) | The NSBI code omits the extended Poisson term, and the two project docs disagree on the sign of the effect — both flagged, neither resolved. |
+| 10 | [Known caveats on the evidence](#10-known-caveats-on-the-evidence) | The NSBI code omits the extended Poisson term (fix pending); the sign ambiguity was resolved 2026-07-10 — the median of toys is the narrower curve. |
 | 11 | [Why would NSBI be overconfident? Hypotheses](#11-why-would-nsbi-be-overconfident-hypotheses) | NN mis-specification, no exactly unbiased NN estimator, training blind to sample-size fluctuations — and the ML literature says SBI is generically overconfident. |
-| 12 | [Proposed mitigations](#12-proposed-mitigations) | Toy-ensemble training, Bartlett-type corrections, MC-stat uncertainties, a dimensionality study — each with a literature anchor. |
-| 13 | [Open questions](#13-open-questions) | Sign and size after the Poisson-term fix; a scalar breakdown metric; whether the pointwise median is even the right comparator. |
-| 14 | [Glossary](#14-glossary) | Every term in one line. |
-| 15 | [References](#15-references) | The canonical papers behind each section. |
+| 12 | [What the SBI literature already knows: overconfidence and coverage](#12-what-the-sbi-literature-already-knows-overconfidence-and-coverage) | Hermans et al.: every benchmarked SBI family can be overconfident; expected coverage is the diagnostic — and it is prior-averaged *frequentist* coverage, the bridge to our check. |
+| 13 | [Non-asymptotic corrections: the Bartlett correction](#13-non-asymptotic-corrections-the-bartlett-correction) | Rescale the LR statistic by its finite-sample mean and it matches χ² an order better; our 200-toy ensembles already contain the needed E[t]. |
+| 14 | [Toy-ensemble training and Deep Sets](#14-toy-ensemble-training-and-deep-sets) | Any permutation-invariant function is ρ(Σφ); sum pooling carries the sample size — the very thing standard NSBI training never sees. |
+| 15 | [Proposed mitigations](#15-proposed-mitigations) | Toy-ensemble training, Bartlett-type corrections, MC-stat uncertainties, a dimensionality study — each with a literature anchor. |
+| 16 | [Open questions](#16-open-questions) | Sign and size after the Poisson-term fix; a scalar breakdown metric; whether the pointwise median is even the right comparator. |
+| 17 | [Glossary](#17-glossary) | Every term in one line. |
+| 18 | [References](#18-references) | The canonical papers behind each section. |
 
 ---
 
@@ -81,7 +84,7 @@ An **NSBI analysis** evaluates a per-event likelihood ratio: every event contrib
 
 > 💡 **Analogy.** A histogram lets you choose the bucket size; NSBI hands every event its own bucket. You can always make buckets big enough that each holds a crowd — but a bucket sized for one occupant is never crowded, no matter how many buckets there are.
 
-The consequence, and the project's framing hypothesis: *for high-dimensional per-event analyses, the non-asymptotic regime extends to far larger total event counts than one-dimensional intuition suggests* — here, an analysis with O(100) events (10 fb⁻¹) still misbehaves. Mitigation #4 (§12) is designed to test that this is really about dimensionality/effective-bin occupancy rather than about neural networks per se: a 4-dimensional *histogram* at 1 fb⁻¹ should start failing the same way.
+The consequence, and the project's framing hypothesis: *for high-dimensional per-event analyses, the non-asymptotic regime extends to far larger total event counts than one-dimensional intuition suggests* — here, an analysis with O(100) events (10 fb⁻¹) still misbehaves. Mitigation #4 (§15) is designed to test that this is really about dimensionality/effective-bin occupancy rather than about neural networks per se: a 4-dimensional *histogram* at 1 fb⁻¹ should start failing the same way (design: `docs/dimensionality-study.md`).
 
 ---
 
@@ -158,13 +161,13 @@ Same events, same toy recipe, same comparator — the only change between slide 
 
 **(i) The NSBI code omits the extended Poisson term.** Tei flagged this on 2026-07-09 (`docs/context.md` § Known code issues) and the code walkthrough confirmed it with file-level evidence (`docs/env-setup-and-code-walkthrough.md` § Verified): the NSBI notebook computes a weighted pure-shape NLL, $-2\sum_i \nu_i \ln r(x_i|\mu)$, with no $\nu(\mu) - n\ln\nu(\mu)$ rate term anywhere in the NSBI path — consistently, the saved scan has $\mathrm{NLL}(\mu{=}0) = 0$ exactly. The histogram path is correct (full per-bin Poisson log-pmf). Subtlety worth preserving: a $-n\ln\nu(\mu)$-like piece *partially* enters through the mixture-ratio denominator, but the linear $+\nu(\mu)$ piece is entirely absent. Consequence: **all slide-6/7 curves are pre-fix, pure-shape curves**, and slide 7's convergence at 1000 fb⁻¹ happened *without* the explicit rate term (the rate information entering only via the per-event weights). The agreed procedure is to reproduce the curves as-is first, then add the term and re-run — both the size *and the sign* of the discrepancy may change.
 
-**(ii) The direction of the effect is stated inconsistently across the project's own docs — UNRESOLVED.** Verbatim, both sides:
+**(ii) The direction of the effect was stated inconsistently across the project's own docs — resolved 2026-07-10 (update at the end of this item).** Verbatim, both sides as they stood:
 
 > `docs/context.md` § Key finding: "At 1–10 fb⁻¹, the NSBI median(toys) diverges significantly from the Asimov prediction: NLL curves are systematically steeper (NSBI is overconfident)."
 
 > `docs/env-setup-and-code-walkthrough.md` § Direction to verify: "on slide 7 at 1 fb⁻¹ the **median-of-toys NLL is steeper (narrower) than the Asimov** (blue above orange) — i.e. the single Asimov scan is the *wider/less-constraining* one. context.md currently says 'NSBI NLL scan is systematically narrower than the median … (overconfident)', which reads as the opposite sign."
 
-The context.md sentence leaves the subject of "steeper" ambiguous (and note the env-setup doc's inner quotation of context.md is itself not verbatim — no such sentence appears in the current context.md). Direct inspection of slide 7 supports the env-setup reading of the *figure*: the median of toys is the steeper curve, i.e. the Asimov scan *understates* the toys' median constraint. Which of the two curves deserves the label "overconfident" is then an interpretation question layered on top ("the Asimov underestimates" vs "the toys overestimate"), and it interacts with the median-definition caveat of §8 and the missing rate term of (i). **Resolution path (agreed): reproduce the curves, fix the median convention, add the Poisson term, re-check — before any statement about the direction propagates further** (this note deliberately quotes both sides rather than adjudicating).
+The context.md sentence leaves the subject of "steeper" ambiguous (and note the env-setup doc's inner quotation of context.md is itself not verbatim — no such sentence appears in the current context.md). Direct inspection of slide 7 supports the env-setup reading of the *figure*: the median of toys is the steeper curve, i.e. the Asimov scan *understates* the toys' median constraint. Which of the two curves deserves the label "overconfident" is then an interpretation question layered on top ("the Asimov underestimates" vs "the toys overestimate"), and it interacts with the median-definition caveat of §8 and the missing rate term of (i). **Resolution path (agreed): reproduce the curves, fix the median convention, add the Poisson term, re-check — before any statement about the direction propagates further** (this note deliberately quotes both sides rather than adjudicating). **Update 2026-07-10 — resolved:** the Phase-1 direction check measured Tei's committed 300 fb⁻¹ NSBI tensors directly: median(toys) is the narrower/steeper curve, Δ(−2lnL) = 1 width ratio median/Asimov = 0.874, confirming the env-setup reading of the figure; `docs/context.md` has been clarified accordingly (numbers and method: `docs/hist-reproduction.md`). Caveat (i) still stands — the measurement is pre-fix, so re-check the direction after the rate term is added.
 
 **(iii) Do not source evidence from the repo's committed scan files.** The `.pt` tensors committed at the sub-repo root are NSBI, μ-mode, at **300 fb⁻¹** — a different luminosity grid from the slides. They are reproduction targets, not the founding evidence.
 
@@ -177,25 +180,85 @@ Four candidate mechanisms, not mutually exclusive:
 1. **NN mis-specification** (Tei's own reading, slide 7): the learned ratios $\hat r(x)$ deviate from the true $r(x)$; a wrong likelihood is being scanned, and there is no theorem about its curvature. The convergence exactly when the (exact, analytic) Poisson term dominates points the finger at the NN-supplied piece.
 2. **No exactly unbiased NN estimator** (also slide 7): a histogram's bin counts are unbiased estimators of bin expectations by construction; a trained network is not an unbiased estimator of anything, ensembling or not. Some bias term in the learned log-ratio is unavoidable and its effect on the scan curvature is uncontrolled.
 3. **Training is blind to sample-size fluctuations** (`docs/context.md` § Key finding): the networks are trained on a single, large, Asimov-like balanced sample. The learned ratio is a statement about *densities*, carrying no representation of what a 6-event dataset does to shape estimates. The root-cause paragraph in context.md frames this as "a systematic bias intrinsic to the CARL/NSBI procedure in the non-asymptotic regime — not a training artefact that can be fixed by better regularisation alone."
-4. **SBI is generically overconfident** (literature Refs. 5, 13): Hermans et al. showed across SBI algorithm families — including neural ratio estimation, CARL's family — that the resulting approximate posteriors are systematically *less conservative than the truth* unless explicitly diagnosed and corrected; BNRE (Delaunoy et al.) modifies the training objective to buy conservativeness. That is the Bayesian-coverage view of what the Asimov-vs-median check probes frequentistly. The convergence of the two literatures on the same word — *overconfident* — is the strongest external hint that Tei's observation is a real, structural phenomenon.
+4. **SBI is generically overconfident** (literature Refs. 5, 13): Hermans et al. showed across SBI algorithm families — including neural ratio estimation, CARL's family — that the resulting approximate posteriors are systematically *less conservative than the truth* unless explicitly diagnosed and corrected; BNRE (Delaunoy et al.) modifies the training objective to buy conservativeness. That is the Bayesian-coverage view of what the Asimov-vs-median check probes frequentistly. The convergence of the two literatures on the same word — *overconfident* — is the strongest external hint that Tei's observation is a real, structural phenomenon. (Expanded in §12.)
 
 > 💡 Note the tension worth keeping in mind: hypotheses 1–2 are about the NN being *wrong*; hypothesis 3 would apply, at some level, even to a *perfectly* learned ratio, because the issue is what a finite dataset does to the statistic's distribution, not only the quality of the density estimate. Disentangling these is precisely what the mitigation studies are for.
 
 ---
 
-## 12. Proposed mitigations
+## 12. What the SBI literature already knows: overconfidence and coverage
 
-From `docs/context.md` § Proposed fixes, each with its literature anchor (numbers = `literature.md` refs):
+The project's frequentist observation has a Bayesian twin, documented at benchmark scale. Hermans et al. (Ref. 5) present "extensive empirical evidence showing that current Bayesian simulation-based inference algorithms can produce computationally unfaithful posterior approximations", and their headline is family-wide, verbatim: "all benchmarked algorithms – (Sequential) Neural Posterior Estimation, (Sequential) Neural Ratio Estimation, Sequential Neural Likelihood and variants of Approximate Bayesian Computation – can yield overconfident posterior approximations, which makes them unreliable for scientific use cases and falsificationist inquiry." Neural ratio estimation — the family CARL belongs to — is on that list explicitly: this is not an anecdote about one badly tuned network, it is the systematic behaviour of the method class across simulators and budgets.
 
-1. **Toy-ensemble training** — train on many pseudo-experiments rather than one Asimov-like sample, with a permutation-invariant set architecture (**Deep Sets**, Ref. 12), so the network can learn that confidence must scale with available statistics. Attacks hypothesis 3 head-on.
-2. **Alternative / corrected test statistics** — Bartlett-type corrections rescale the LR statistic by its finite-sample mean, accelerating the approach to χ² (Bartlett 1937, Ref. 8; a worked HEP deployment in Cowan 2019, Ref. 9). Attacks the symptom at the test-statistic level, agnostic to its cause.
-3. **MC statistical uncertainties** — incorporate the finite size of the simulation samples into both likelihoods (Barlow–Beeston-type treatment; anchor **not yet verified**, see literature.md §E), making both analyses more conservative.
-4. **Dimensionality study** — run a 4-dimensional *histogram* analysis at 1 fb⁻¹. If it starts failing the Asimov property like NSBI does, the effect is about effective-bin occupancy (§4), not about machine learning per se. This is the cleanest discriminator between "NN problem" and "dimensionality problem".
-5. *(candidate, not yet in the plan)* **Conservative training objectives** — BNRE (Ref. 13) exists precisely to make ratio estimators err conservative; it is the natural external baseline for mitigation 1 and a possible fix in its own right.
+**The diagnostic is coverage.** For a posterior approximation $\hat p(\vartheta \mid x)$ and credible level $1-\alpha$, let $\Theta_{\hat p(\vartheta \mid x)}(1-\alpha)$ be the smallest-volume (highest-posterior-density) region integrating to $1-\alpha$. The **expected coverage probability** is (Ref. 13 Eq. 2, following Ref. 5):
+
+$$\mathrm{ECP}(1-\alpha) \;=\; \mathbb{E}_{p(\vartheta, x)}\!\left[\,\mathbb{1}\big(\vartheta \in \Theta_{\hat p(\vartheta\mid x)}(1-\alpha)\big)\right],$$
+
+i.e. simulate pairs $(\vartheta^*, x)$ from the joint, ask how often the truth lands inside the region the approximation claims should contain it. A *faithful* posterior gives $\mathrm{ECP} = 1-\alpha$ at every level; a *conservative* one gives $\mathrm{ECP} \ge 1-\alpha$ at every level; **overconfident** means $\mathrm{ECP} < 1-\alpha$ — regions systematically smaller than they should be. The empirical finding of Ref. 5 is the third case, pervasively, especially at small simulation budgets.
+
+**The bridge to this project's check is already in the literature.** Ref. 13 (§3) notes that the expected coverage probability "can be interpreted as the expected frequentist coverage" $\mathbb{E}_{p(\vartheta)}\mathbb{E}_{p(x \mid \vartheta)}[\mathbb{1}(\vartheta \in \Theta(1-\alpha))]$ — prior-averaged frequentist coverage, and a special case of the simulation-based-calibration diagnostic. So the Bayesian and frequentist literatures are measuring the same failure: an interval-producing procedure whose intervals are too small under repeated sampling from the model. The Asimov-vs-median check probes the same pathology one step earlier in the chain — it compares two of the procedure's *own* sensitivity predictions (Asimov curve vs toy-median curve) rather than confronting intervals with the truth. Direction consistency: the Phase-1 measurement found median(toys) *narrower* than the Asimov (§10 update), i.e. the toy ensemble claims more sensitivity than the expectation-level fit — the overconfident direction. The two checks are not identical (coverage involves $\vartheta^*$; the Asimov-median comparison never looks at the truth), and making the mapping quantitative is an open question (§16) — but qualitatively they point the same way, which is why Ref. 5 belongs in this note's evidence base and not just its related-work list.
+
+**What the ML literature offers as fixes.** Ref. 5's own mitigation evidence is **ensembling**: "ensembling posterior surrogates provides more reliable approximations and mitigates the issue." The sharper, structural fix is **Balanced Neural Ratio Estimation** (BNRE, Ref. 13). In NRE, a binary classifier $\hat d(\vartheta, x)$ separates joint samples $p(\vartheta, x)$ (label 1) from product-of-marginals samples $p(\vartheta)p(x)$ (label 0); the Bayes-optimal classifier encodes the likelihood-to-evidence ratio. BNRE restricts the hypothesis space to **balanced** classifiers — those satisfying (Ref. 13 Def. 1):
+
+$$\mathbb{E}_{p(\vartheta, x)}\!\left[\hat d(\vartheta, x)\right] \;+\; \mathbb{E}_{p(\vartheta)p(x)}\!\left[\hat d(\vartheta, x)\right] \;=\; 1 .$$
+
+Three theorems make this interesting (Ref. 13 Thms. 1–3): any balanced classifier satisfies $\mathbb{E}_{p(\vartheta,x)}[\,d/\hat d\,] \ge 1$ and $\mathbb{E}_{p(\vartheta)p(x)}[\,(1-d)/(1-\hat d)\,] \ge 1$ with $d$ the Bayes-optimal classifier — in expectation it is *less confident than the optimum* (the guarantee is in expectation only, not pointwise) — and the Bayes-optimal classifier is itself balanced, so the restriction costs nothing at convergence: same optimum, conservative tendency at finite budget. In practice the condition is added to the classification loss as a penalty (Ref. 13 §3.2) — a drop-in change, no extra networks, no extra compute.
+
+> 💡 **Why this matters operationally here.** Our two CARL networks are binary classifiers of exactly this type (label 1 = numerator sample, label 0 = reference sample). A BNRE-style balancing penalty is directly implementable in the training loss of `models/carl.py` — which turns mitigation #5 (§15) from a literature pointer into a one-line experiment, and gives the Asimov-vs-median check a conservative baseline to compare against.
 
 ---
 
-## 13. Open questions
+## 13. Non-asymptotic corrections: the Bartlett correction
+
+**The idea (Bartlett 1937, Ref. 8).** In finite samples the LR statistic $t_\mu$ is not χ²-distributed, and the lowest-order symptom sits in its *mean*: asymptotically $\mathbb{E}[t_\mu] = n_d$ (the number of degrees of freedom, here 1), but at finite sample size the mean drifts, $\mathbb{E}[t_\mu] = n_d\,(1 + b/n + \dots)$. Bartlett's move is to rescale the statistic by its actual mean:
+
+$$t'_\mu \;=\; \frac{n_d}{\mathbb{E}[t_\mu]}\; t_\mu ,$$
+
+so that $\mathbb{E}[t'_\mu] = n_d$ *by construction* (Ref. 9 Eq. 38). The non-trivial content — due to Lawley — is that fixing the mean fixes the *distribution*: the corrected statistic follows the reference χ² an order better than the raw one. Ref. 9 quotes the difference as order $n^{-3/2}$ in its worked model; the textbook statement for regular parametric families is an improvement of the χ² approximation error from $O(1/n)$ to $O(1/n^2)$. Either way, the whole shape improves, not just the first moment — that is what earns the word "correction" rather than "normalisation".
+
+**The HEP deployment (Cowan 2019, Ref. 9 §5.1).** Cowan applies exactly this to a profile-likelihood statistic in a small-effective-sample model (his gamma-variance / error-on-error model), noting the method "has received some limited notice in Particle Physics". Two routes to the needed $\mathbb{E}[t_\mu]$: an analytic expansion where the model permits (his Eq. 40: $\mathbb{E}[t_\mu] = 1 + 3r^2 + c\,r^4$ with $c \approx 2$), or — his words — "one could in principle find the expectation value $E[t_\mu]$ by the Monte Carlo method". The MC route is the one open to us, because for an NN-defined statistic there is no analytic expansion to write down.
+
+**Application sketch for this project** (this note's proposal, not yet in any plan): the toy machinery already produces, at every $(\mu, L)$ point, 200 values of the statistic — the per-μ empirical mean $\hat{\mathbb{E}}[t_\mu]$ is a *by-product of scans we already run* (note: the mean, where the existing comparator uses the median). Define the corrected curves $t'_\mu = t_\mu / \hat{\mathbb{E}}[t_\mu]$ for the Asimov and each toy, and re-ask the Asimov-vs-median question on corrected curves. Honest subtleties, before anyone over-interprets the result:
+
+- Bartlett theory assumes $t_\mu$ is the LR statistic of a *correctly specified* regular model. The NSBI statistic is built from an NN-approximated ratio: the correction addresses the finite-sample *distributional* error, not estimator mis-specification (§11 hypotheses 1–2). If the learned ratio is wrong, no rescaling of its statistic repairs that.
+- That limitation is exactly what makes the exercise diagnostic: **if a Bartlett-type rescaling reconciles Asimov and toys, the failure was distributional (hypothesis 3 territory); if it does not, the estimator itself is implicated (hypotheses 1–2)** — a clean experiment on the §11 tension.
+- With 200 toys at ~6 events, $\hat{\mathbb{E}}[t_\mu]$ carries non-negligible sampling error of its own (and needs a convention for toys whose scan minimum escapes the μ window — the §8 curve-convention caveat propagates here).
+
+> 🎯 Mitigation #2 (§15) thus comes with a falsifiable protocol using only existing machinery: no new training, no new generator — one extra curve per panel.
+
+---
+
+## 14. Toy-ensemble training and Deep Sets
+
+**The mechanism to attack** is §11 hypothesis 3: standard CARL training sees one large balanced sample and learns a statement about *densities*; nothing in training encodes what a 6-event dataset does to a ratio estimate. Mitigation #1 proposes to train on *many pseudo-experiments*, so the network's output can depend on the dataset as a whole — including how big it is. That requires a network whose input is a dataset.
+
+**Why sets need a theorem.** A dataset of events is an unordered, variable-size collection — the hypothesis class must be permutation-invariant by construction, not by data augmentation. Deep Sets (Ref. 12) characterises exactly this class. Theorem 2, verbatim: "A function $f(X)$ operating on a set $X$ having elements from a countable universe, is a valid set function, i.e., invariant to the permutation of instances in $X$, iff it can be decomposed in the form $\rho\left(\sum_{x \in X} \phi(x)\right)$, for suitable transformations $\phi$ and $\rho$." That is:
+
+$$f(X) \;=\; \rho\!\Big(\sum_{x \in X} \phi(x)\Big)$$
+
+— embed each element with $\phi$, sum, post-process with $\rho$; in practice both are neural networks (universal approximators), which is the DeepSets architecture (Ref. 12 §3.1). Fine print from the paper itself: for uncountable domains (our continuous 16-dimensional events) the decomposition is *proven* for fixed-size sets and *conjectured* in general; a max-pooling variant exists.
+
+**The load-bearing detail for this project: sum pooling carries the sample size** (this note's observation, not the paper's emphasis). With $\sum_i \phi(x_i)$, adding events moves the pooled representation — $\rho$ can read multiplicity as well as shape, so learned confidence *can* scale with $N$. A mean-pooled network would see only shape and be structurally blind to sample size — the very blindness being cured. Two representation choices follow for weighted events: feed $\phi$ the pair (kinematics, toy weight) or realise each toy weight as event multiplicity; a design decision for the implementation, with the per-event Poisson toy generator (§8) able to produce unlimited training sets either way.
+
+**Design space** (sketch for Phase 3, no commitment): input = one whole toy dataset; output candidates, roughly in order of ambition — (a) a per-dataset *correction* to the standard per-event NSBI curve (learn only the finite-$N$ distortion; safest, anchored to the existing analysis), (b) an amortised per-dataset likelihood-ratio curve over the μ grid (a conditional deep-set ratio estimator), (c) the interval or test statistic directly. Open issues to keep in view: generalisation across luminosities (train at several $L$, test between), the set-network's own calibration (it can be overconfident too — §12's diagnostics apply recursively), and the relation to Ref. 5's ensembling (ensembles average away *model* uncertainty; toy-ensemble training targets *data-statistics* uncertainty — complementary, not competing).
+
+> 💡 Dataset-level amortisation is standard in the NPE corner of SBI, where a posterior network ingests the full observation; the twist here is targeting the *frequentist scan curve* and its finite-sample behaviour rather than a posterior. If it works, the network has effectively learned the finite-$N$ sampling distribution that asymptotic theory stopped providing — which is the whole ballgame of this project.
+
+---
+
+## 15. Proposed mitigations
+
+From `docs/context.md` § Proposed fixes, each with its literature anchor (numbers = `literature.md` refs):
+
+1. **Toy-ensemble training** — train on many pseudo-experiments rather than one Asimov-like sample, with a permutation-invariant set architecture (**Deep Sets**, Ref. 12), so the network can learn that confidence must scale with available statistics. Attacks hypothesis 3 head-on. (Design theory: §14.)
+2. **Alternative / corrected test statistics** — Bartlett-type corrections rescale the LR statistic by its finite-sample mean, accelerating the approach to χ² (Bartlett 1937, Ref. 8; a worked HEP deployment in Cowan 2019, Ref. 9). Attacks the symptom at the test-statistic level, agnostic to its cause. (Mechanics and a toy-based protocol: §13.)
+3. **MC statistical uncertainties** — incorporate the finite size of the simulation samples into both likelihoods (Barlow–Beeston-type treatment; anchor **not yet verified**, see literature.md §E), making both analyses more conservative.
+4. **Dimensionality study** — run a 4-dimensional *histogram* analysis at 1 fb⁻¹. If it starts failing the Asimov property like NSBI does, the effect is about effective-bin occupancy (§4), not about machine learning per se. This is the cleanest discriminator between "NN problem" and "dimensionality problem".
+5. *(candidate, not yet in the plan)* **Conservative training objectives** — BNRE (Ref. 13) exists precisely to make ratio estimators err conservative; it is the natural external baseline for mitigation 1 and a possible fix in its own right. (Mechanism: §12.)
+
+---
+
+## 16. Open questions
 
 Conceptual questions this note leaves open (operational ones live in `docs/env-setup-and-code-walkthrough.md` § Open questions):
 
@@ -203,11 +266,11 @@ Conceptual questions this note leaves open (operational ones live in `docs/env-s
 - **A breakdown metric.** What scalar quantifies "Asimov-property violation" as a function of luminosity and analysis dimensionality — a curve-distance, a coverage error, an interval-width ratio? Needed for the planned quantitative output (`docs/context.md` § Outputs).
 - **Is the pointwise median of curves the right comparator** when the statistic is far from χ²-distributed and toy curves need not be parabolic (§8)? Median-of-curves, curve-of-medians, and median-of-scalar-summaries can all differ at 6 events.
 - **Where does the histogram break?** At what effective dimensionality/bin occupancy does the histogram analysis itself start violating the property (mitigation 4)? That locates the boundary of the asymptotic regime empirically.
-- **Frequentist ↔ Bayesian bridge.** Can the Asimov-vs-median check be related quantitatively to the SBI-calibration diagnostics of Refs. 5/13 (expected coverage), so the two literatures' evidence can be pooled?
+- **Frequentist ↔ Bayesian bridge.** Can the Asimov-vs-median check be related quantitatively to the SBI-calibration diagnostics of Refs. 5/13 (expected coverage), so the two literatures' evidence can be pooled? §12 supplies the dictionary (expected coverage = prior-averaged frequentist coverage); the quantitative pooling protocol is the part that remains open.
 
 ---
 
-## 14. Glossary
+## 17. Glossary
 
 | Term | One line |
 |------|----------|
@@ -226,15 +289,15 @@ Conceptual questions this note leaves open (operational ones live in `docs/env-s
 | CARL | Likelihood-ratio estimation via calibrated classifiers: $s/(1-s) = p_{\rm num}/p_{\rm ref}$. |
 | Density ratio, $p_{\rm ref}$ | The quantity CARL learns; the fixed reference density (here $p_B$) that cancels in ratios. |
 | Likelihood-ratio trick | The identity turning an optimal classifier's output into a density ratio. |
-| Overconfidence | Reported uncertainty smaller than true dispersion; in SBI literature, posteriors narrower than faithful ones. |
-| Coverage | Fraction of repeated experiments whose reported interval contains the truth; the Bayesian-diagnostic mirror of the Asimov check. |
-| Bartlett correction | Rescaling of the LR statistic by its finite-sample mean, improving the χ² approximation from O(1/n) to O(1/n²). |
-| Deep Sets | Permutation-invariant NN architecture for set-valued inputs (a dataset of events is a set). |
-| BNRE | Balanced neural ratio estimation: a training objective that makes learned ratios conservative. |
+| Overconfidence | Reported uncertainty smaller than true dispersion; in SBI literature, posteriors narrower than faithful ones (§12). |
+| Coverage | Fraction of repeated experiments whose reported interval contains the truth; the Bayesian-diagnostic mirror of the Asimov check (§12). |
+| Bartlett correction | Rescaling of the LR statistic by its finite-sample mean, improving the χ² approximation from O(1/n) to O(1/n²) (§13). |
+| Deep Sets | Permutation-invariant NN architecture for set-valued inputs (a dataset of events is a set) (§14). |
+| BNRE | Balanced neural ratio estimation: a training objective that makes learned ratios conservative (§12). |
 
 ---
 
-## 15. References
+## 18. References
 
 Full annotated bibliography with local PDFs: [`literature.md`](literature.md). Section anchors:
 
@@ -245,4 +308,7 @@ Full annotated bibliography with local PDFs: [`literature.md`](literature.md). S
 - §§1, 7–9 — Tei's slides (Ref. 0): model p. 2, likelihoods p. 3, yields p. 4, toys p. 5, histogram result p. 6, NSBI result p. 7.
 - §10 — `docs/context.md` § Known code issues; `docs/env-setup-and-code-walkthrough.md` §§ Verified / Direction to verify.
 - §11 — Hermans et al. (Ref. 5), BNRE (Ref. 13).
-- §12 — Deep Sets (Ref. 12), Bartlett 1937 (Ref. 8), Cowan 2019 (Ref. 9), Barlow–Beeston (unverified, literature.md §E).
+- §12 — Hermans et al. (Ref. 5: abstract, §§1–2), BNRE (Ref. 13: Eq. 2, Def. 1, Thms. 1–3, §3.2), frontier of SBI (Ref. 10) for the algorithm-family map.
+- §13 — Bartlett 1937 (Ref. 8), Cowan 2019 (Ref. 9: §5.1, Eqs. 38–41).
+- §14 — Deep Sets (Ref. 12: Thm. 2, §3.1); toy recipe §8.
+- §15 — Deep Sets (Ref. 12), Bartlett 1937 (Ref. 8), Cowan 2019 (Ref. 9), Barlow–Beeston (unverified, literature.md §E).
