@@ -1,0 +1,25 @@
+# Retrain sbi_over_bkg ONLY, beefed up (the original failed to learn — flat ratio, val 0.693).
+# Harder task (SBI is ~95% background): more capacity, lower LR, longer early-stop patience.
+# sig_over_bkg is a keeper and is NOT retrained.
+universe                = vanilla
+executable              = /project/atlas/Users/mfernand/SBI_shortcomings/scripts/nsbi_pathB_train.sh
+# args: run_name numerator_csv n_layers n_nodes lr
+arguments               = sbi_over_bkg /project/atlas/Users/mfernand/SBI_shortcomings/data/zz4l/ggzz4l_sm/ggzz4l_sbi.csv 4 256 3e-4
+
++SingularityImage       = "/project/atlas/Users/mfernand/SBI_shortcomings/asimov-aymptotics-check/ml4fp-sbi-tutorial.sif"
++JobCategory            = "medium"
+environment             = "CARL_EARLYSTOP_PATIENCE=50"
+
+request_gpus            = 1
+request_cpus            = 8
+request_memory          = 32G
+request_disk            = 8G
+
+log                     = /project/atlas/Users/mfernand/SBI_shortcomings/output/nsbi-pathB/condor/sbi_over_bkg_v2.log
+output                  = /project/atlas/Users/mfernand/SBI_shortcomings/output/nsbi-pathB/condor/sbi_over_bkg_v2.out
+error                   = /project/atlas/Users/mfernand/SBI_shortcomings/output/nsbi-pathB/condor/sbi_over_bkg_v2.err
+
+should_transfer_files   = NO
+getenv                  = False
+
+queue
