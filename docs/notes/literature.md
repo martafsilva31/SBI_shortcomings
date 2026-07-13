@@ -10,7 +10,8 @@
 > under study; **[SUPPORTING]** = statistics/ML background and mitigation anchors.
 >
 > All arXiv IDs and journal references verified against arxiv.org / publisher pages
-> on 2026-07-09; every PDF title page checked against its citation.
+> on 2026-07-09; every PDF title page checked against its citation. Refs. 14–16
+> verified against Inspire / Crossref / arXiv on 2026-07-13 (no local PDFs yet).
 
 ---
 
@@ -169,6 +170,32 @@ Local: [`refs/1809.05778_Cowan_uncertain_error_parameters.pdf`](../refs/1809.057
 > the paper, not the abstract). The practical bridge from Ref. 8 to an implementation
 > this project could copy for mitigation #2.
 
+### [SUPPORTING] Ref. 14 — Barlow & Beeston (1993)
+
+**R. Barlow, C. Beeston**, *Fitting using finite Monte Carlo samples*, **Comput. Phys.
+Commun. 77 (1993) 219–228**.
+DOI: [10.1016/0010-4655(93)90005-W](https://doi.org/10.1016/0010-4655(93)90005-W).
+*(Verified against Inspire 2026-07-13; no local PDF yet.)*
+
+> The standard treatment of MC statistical uncertainties in template fits: one nuisance
+> parameter per bin per source for the unknown true MC expectation, profiled in the fit.
+> The "lite" simplification (one effective parameter per bin, effective sample size
+> n_eff = (Σw)²/Σw²) is what modern HEP fits deploy. Literature anchor for mitigation #3.
+
+### [SUPPORTING] Ref. 15 — Neyman (1937)
+
+**J. Neyman**, *Outline of a Theory of Statistical Estimation Based on the Classical
+Theory of Probability*, **Phil. Trans. R. Soc. Lond. A 236 (1937) 333–380**.
+DOI: [10.1098/rsta.1937.0005](https://doi.org/10.1098/rsta.1937.0005).
+*(Verified against Crossref 2026-07-13; no local PDF yet.)*
+
+> The origin of confidence intervals and of the **Neyman construction**: build, for every
+> hypothesis value, the acceptance region containing the desired probability of the data;
+> the confidence set is every hypothesis whose region contains the observation. Coverage
+> is guaranteed **by construction**, with no asymptotic assumption — which is exactly why
+> toy-based calibration (a Monte Carlo Neyman construction) is the fallback when
+> Wilks/Wald fail, and the theory anchor for the foundations note's coverage section.
+
 ---
 
 ## D. SBI / ML methods context
@@ -221,18 +248,25 @@ Local: [`refs/2208.13624_BNRE_balanced_NRE.pdf`](../refs/2208.13624_BNRE_balance
 > same group as Ref. 5. A candidate fifth mitigation for this project and the natural
 > baseline to compare any fix against.
 
+### [SUPPORTING] Ref. 16 — Deep Ensembles (2017)
+
+**B. Lakshminarayanan, A. Pritzel, C. Blundell**, *Simple and Scalable Predictive
+Uncertainty Estimation using Deep Ensembles*, **Advances in Neural Information
+Processing Systems 30 (NIPS 2017)**.
+arXiv: [1612.01474](https://arxiv.org/abs/1612.01474).
+*(Verified against arXiv 2026-07-13; no local PDF yet.)*
+
+> The canonical reference for **ensembling as uncertainty estimation**: train M networks
+> from independent initialisations, treat the spread of their outputs as (epistemic)
+> model uncertainty. Anchors the foundations note's distinction between what ensembles
+> estimate (training/model variability) and what toys estimate (data statistics) — the
+> two are complementary, and neither substitutes for the other.
+
 ---
 
 ## E. Not yet verified — do not cite before checking
 
-### [REF NEEDED] Barlow–Beeston (1993)
-
-**R. Barlow, C. Beeston**, *Fitting using finite Monte Carlo samples*, Comput. Phys.
-Commun. 77 (1993) 219–228 *(citation from memory — NOT verified against the publisher)*.
-
-> The standard treatment of MC statistical uncertainties in template fits — the natural
-> anchor for mitigation #3 (add MC stat uncertainties to both analyses). ⚠ Verify the
-> exact citation before first use.
+*(empty — the former entry, Barlow–Beeston, was verified 2026-07-13 and promoted to Ref. 14.)*
 
 ---
 
@@ -247,7 +281,9 @@ Commun. 77 (1993) 219–228 *(citation from memory — NOT verified against the 
 | Ref. 8 + 9 (Bartlett) | Mitigation #2 — alternative test statistics (Phase 3) |
 | Ref. 12 (Deep Sets) | Mitigation #1 — toy-ensemble training (Phase 3) |
 | Ref. 13 (BNRE) | Candidate mitigation #5 — conservative training objective |
-| [REF NEEDED] Barlow–Beeston | Mitigation #3 — MC stat uncertainties (Phase 3) |
+| Ref. 14 (Barlow–Beeston) | Mitigation #3 — MC stat uncertainties (Phase 3) |
+| Ref. 15 (Neyman) | Coverage & the Neyman construction (foundations note, coverage section) |
+| Ref. 16 (Deep Ensembles) | Ensembling as model-uncertainty estimation (foundations note) |
 
 ---
 
