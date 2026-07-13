@@ -1,0 +1,16 @@
+{
+  "project": "SBI Shortcomings",
+  "project_page": "936ee23a-ea2e-4b02-9be6-beb87edf1153",
+  "logbook_data_source": "1df920da-be19-80dd-ad06-000b30c1acae",
+  "notes_data_source": "2c3920da-be19-805e-9c64-000b0d4fdc0e",
+  "entries": {
+    "docs/env-setup-and-code-walkthrough.md": "39c920da-be19-819f-b1ac-fa9a45922c11",
+    "docs/hist-reproduction.md": "39c920da-be19-813f-bf89-dde0ab298252",
+    "docs/dimensionality-study.md": "39c920da-be19-8170-b336-ff04583ff0c9",
+    "docs/phase3-fixes.md": "39c920da-be19-8157-bd94-f8685a266de3",
+    "docs/notes/sbi_foundations.md": "39c920da-be19-8138-ab01-f47a99338e11",
+    "docs/notes/literature.md": "39c920da-be19-815b-a793-d7f176dffaa2"
+  },
+  "synced": "2026-07-13",
+  "notes": "Notion copies are the unwrapped (one-line-per-paragraph) equivalents of the local docs; content identical except `python -m nsbi.carl fit` written as `python3 -m nsbi.carl fit` in the env-setup entry (WAF constraint on the publishing endpoint)."
+}
