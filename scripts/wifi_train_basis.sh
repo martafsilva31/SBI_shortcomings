@@ -24,8 +24,9 @@ export XDG_CACHE_HOME="${TMPDIR:-/tmp}/cache"
 export CARL_BOOTSTRAP_SEED=$MEMBER
 
 # GPU nodes here have their CPUs fully subscribed by other users; a small core request is what
-# makes these jobs matchable at all (see docs/phase3-fixes.md item 8e). Match the dataloader to it.
-export CARL_NUM_WORKERS=2
+# makes these jobs matchable at all (see docs/phase3-fixes.md item 8e). 0 = load in the main process:
+# the dataset is already an in-memory numpy array, so worker processes buy nothing and cost a core.
+export CARL_NUM_WORKERS=0
 
 RUN_NAME="member_$(printf '%02d' "$MEMBER")"
 

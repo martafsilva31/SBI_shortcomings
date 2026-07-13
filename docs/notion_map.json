@@ -12,5 +12,5 @@
     "docs/notes/literature.md": "39c920da-be19-815b-a793-d7f176dffaa2"
   },
   "synced": "2026-07-13",
-  "notes": "Notion copies are the unwrapped (one-line-per-paragraph) equivalents of the local docs; content identical except `python -m nsbi.carl fit` written as `python3 -m nsbi.carl fit` in the env-setup entry (WAF constraint on the publishing endpoint)."
+  "notes": "Notion copies are the unwrapped (one-line-per-paragraph) equivalents of the local docs; content identical except `python -m nsbi.carl fit` written as `python3 -m nsbi.carl fit` in the env-setup entry (WAF constraint on the publishing endpoint). 2026-07-13 (2nd sync): pushed the wifi-ensembles finding to the two Notes pages — sbi_foundations §15.1 + §17.3/§18/TOC/§20, and literature Ref. 17. NOTE: the literature page was found STALE despite the earlier 'synced' stamp — it was still missing Refs. 14–16 and still listed Barlow–Beeston under 'not verified — do not cite', months after it had been verified and used for the BB-lite work. Refs. 14/15/16/17, the emptied section E, and the cross-reference rows were all pushed in this sync. Lesson: the sync stamp is only as good as the last push; verify page content, not the stamp."
 }
