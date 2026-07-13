@@ -23,6 +23,14 @@ import argparse
 import json
 import os
 import pickle
+import sys
+
+# LightningCLI-saved checkpoints need jsonargparse to deserialise, and it is NOT in the container
+# (same gap the path-B training hit). It lives in output/pyextra; put it on the path before importing
+# lightning, or CARL.load_from_checkpoint dies with a cryptic "object() takes no arguments".
+_PYEXTRA = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "output/pyextra")
+if os.path.isdir(_PYEXTRA) and _PYEXTRA not in sys.path:
+    sys.path.insert(0, _PYEXTRA)
 
 import numpy as np
 import pandas as pd
@@ -49,11 +57,23 @@ def load_member(member_dir):
     if ckpt_dir is None:
         raise FileNotFoundError(f"no checkpoint under {member_dir}")
 
-    # filenames are "epoch=NN-val_loss=X.XX.ckpt" (and one train_loss checkpoint) -> pick best val_loss
+    # Filenames round val_loss to 2 decimals ("epoch=17-val_loss=0.42.ckpt"), so every candidate reads
+    # 0.42 and parsing the NAME picks an arbitrary one. Read the true score that Lightning stores in the
+    # ModelCheckpoint callback state instead.
     ckpts = [f for f in os.listdir(ckpt_dir) if f.endswith(".ckpt") and "val_loss" in f]
     if not ckpts:
         raise FileNotFoundError(f"no val_loss checkpoint under {ckpt_dir}")
-    best = min(ckpts, key=lambda f: float(f.split("val_loss=")[1].removesuffix(".ckpt")))
+
+    def val_score(fname):
+        ckpt = torch.load(os.path.join(ckpt_dir, fname), map_location="cpu", weights_only=False)
+        for key, state in ckpt.get("callbacks", {}).items():
+            if "'monitor': 'val_loss'" in str(key) and isinstance(state, dict):
+                score = state.get("current_score")
+                if score is not None:
+                    return float(score)
+        return float("inf")
+
+    best = min(ckpts, key=val_score)
 
     model = CARL.load_from_checkpoint(os.path.join(ckpt_dir, best), map_location="cpu")
     model.eval()
@@ -211,6 +231,7 @@ def main():
         models_scalers.append((model, scaler))
         ckpts.append(ckpt)
         print(f"loaded {os.path.basename(d)}: {os.path.basename(ckpt)}")
+    print(f"{len(models_scalers)} basis networks loaded")
 
     # ---- data: the TEST split only (disjoint from what trained f_i and from validation)
     print("loading test splits ...")
@@ -256,8 +277,17 @@ def main():
     f_pool_n = basis_logits(models_scalers, sig_pool.kinematics[FEATURES].to_numpy())
     f_pool_d = basis_logits(models_scalers, bkg_pool.kinematics[FEATURES].to_numpy())
 
+    # Saturation check: a classifier pinned at s=0 or 1 gives |f| = |logit(LOGIT_CLIP)| = 13.8, and
+    # e^{13.8} = 1e6 would dominate the exponential terms of the loss/Hessian. If this fraction is not
+    # tiny, the fit is being driven by clipped events and the numbers below are not to be trusted.
+    sat = np.mean(np.abs(np.vstack([f_fit_n, f_fit_d])) > 13.0)
+    print(f"basis saturation: {100*sat:.3f}% of |f_i(x)| > 13 on D_fit  (must be tiny)")
+    results_saturation = float(sat)
+
     results = {"config": vars(args), "checkpoints": ckpts,
                "truth_norm": norm, "closure_E_bkg_r_true": float(np.mean(r_true_bkg_pool)),
+               "closure_E_sig_inv_r_true": float(np.mean(1.0 / np.maximum(r_true_sig_pool, 1e-300))),
+               "basis_saturation_frac": results_saturation,
                "ensembles": {}, "coverage": []}
 
     for M in args.members:

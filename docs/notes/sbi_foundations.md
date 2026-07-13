@@ -15,7 +15,7 @@
 | 3 | Weighted events and how toys are made | One Poisson draw per event weight is an exact sample from the extended likelihood — rate and shape fluctuate coherently. |
 | 4 | Likelihood-ratio inference: Wilks and Wald | Two theorems turn $-2\Delta\ln\mathcal{L}$ into a $\chi^2$-distributed ruler, in the large-sample limit and only there. |
 | 5 | The Asimov dataset and what is actually proven | A three-line argument gives Asimov = median, inside the Wald approximation and nowhere else. |
-| 6 | Coverage: what an error bar promises | The Neyman construction guarantees coverage with no asymptotics; $\Delta(-2\ln\mathcal{L}) = 1$ is its asymptotic shortcut. |
+| 6 | Coverage: what an error bar promises | The Neyman construction guarantees coverage with no asymptotics; $\Delta(-2\ln\mathcal{L}) = 1$ is its asymptotic shortcut. Feldman–Cousins fixes *which* outcomes enter the acceptance region, curing flip-flopping and empty intervals. |
 | 7 | When does the Asimov property hold? | Four conditions — regularity, a CLT for the score, correct specification, curve-level quadraticity. "Enough events per bin" is a proxy for one of them. |
 | 8 | Why a histogram can buy the conditions and NSBI cannot | Bin-widening buys the CLT; nothing buys correct specification when the likelihood is learned. |
 | 9 | CARL and NSBI, from first principles | An optimally trained classifier *is* a density ratio; two classifiers give the whole $\mu$-family of likelihoods. |
@@ -257,11 +257,40 @@ Neyman (1937) showed how to build intervals whose coverage is guaranteed **by co
 3. Observe the data; compute $T(\text{data}; \mu)$ for every $\mu$.
 4. Report the confidence set: every $\mu$ whose acceptance region contains the observed $T$.
 
-Coverage is then automatic: whatever the truth is, step 2 made its acceptance region contain the data with probability $1-\alpha$, so the truth enters the reported set with probability $1-\alpha$. No parabola, no Gaussianity, no large $N$ — the guarantee is exact, at any sample size, for any statistic. What the choice of statistic and ordering controls is not validity but **efficiency**: poor choices give valid-but-long intervals (the Feldman–Cousins ordering is the standard refinement).
+Coverage is then automatic: whatever the truth is, step 2 made its acceptance region contain the data with probability $1-\alpha$, so the truth enters the reported set with probability $1-\alpha$. No parabola, no Gaussianity, no large $N$ — the guarantee is exact, at any sample size, for any statistic. What the choice of statistic and ordering controls is not validity but **efficiency**: poor choices give valid-but-long intervals (the Feldman–Cousins ordering of §6.3 is the standard refinement).
 
 **The connection to the asymptotic rule.** The familiar prescription "cut the scan at $\Delta(-2\ln\mathcal{L}) = 1$" is the Neyman construction with two shortcuts: the statistic fixed to $t_\mu$, and the per-$\mu$ toy quantiles replaced by the $\chi^2$ quantile that Wilks promises. When the asymptotic conditions hold, the shortcut is free. When they fail, the $\chi^2$ quantile is simply the *wrong threshold*, and the full toy-based construction is the fallback that always works, at the price of throwing toys per hypothesis. In these terms, the most robust mitigation in §17 is to stop taking the shortcut.
 
-### 6.3 Coverage vs the Asimov check
+### 6.3 Feldman–Cousins: which outcomes enter the acceptance region
+
+Step 2 of the recipe above is underdetermined. It fixes the *size* of each acceptance region — probability $1-\alpha$ under its own $\mu$ — but not *which* outcomes of that probability to take. Any rule that selects a $1-\alpha$ set gives correct coverage, so the choice, called the **ordering rule**, controls everything except validity: the length of the intervals, their behaviour at a physical boundary, and whether the procedure can return something absurd. Feldman & Cousins (1998, Ref. 18) fixed the rule; the two classical pathologies below are what they fixed.
+
+**Pathology 1: flip-flopping.** Long-standing practice was to decide *after seeing the data* what kind of interval to quote — an upper limit if the result is not significant, a two-sided central interval if it is. That makes the ordering rule itself a function of the data, so the reported set is no longer the Neyman construction of any one rule, and its coverage is not what the label says. The left panel of the figure below measures the damage for a Gaussian measurement of $\mu \ge 0$ with the usual "upper limit below $3\sigma$, central interval above" policy: a procedure advertised as 90 % covers only **85 %** across a broad band of true $\mu$. The failure mode is undercoverage — the same disease, in the vocabulary of §6.1, that this project finds in NSBI.
+
+**Pathology 2: empty and unphysical intervals.** With a physical boundary ($\mu \ge 0$) and a downward fluctuation — fewer events observed than the expected background — a classical central construction can return an interval lying entirely below zero: an **empty** confidence set, in which the experiment reports that no physical value of $\mu$ is allowed at 90 % confidence. Coverage is not violated (empty sets occur with exactly the right frequency), but the result is unusable, and the more sensitive the experiment, the more often it happens.
+
+**The ordering rule.** Feldman and Cousins remove the freedom by fixing the ordering *before* the data, and fixing it with the likelihood ratio. For each hypothesis $\mu$, rank the possible outcomes $x$ by
+
+$$
+R(x)=\frac{P(x\mid\mu)}{P\big(x\mid\hat{\mu}_{\rm phys}(x)\big)}
+$$
+
+where $\hat{\mu}_{\rm phys}(x)$ is the value of $\mu$ that best fits the outcome $x$ **within the physically allowed region** — for $\mu \ge 0$, simply $\hat{\mu}_{\rm phys} = \max(\hat{\mu}, 0)$. Outcomes enter the acceptance region in order of decreasing $R$ until the accumulated probability reaches $1-\alpha$; then invert as in §6.2. Nothing else changes.
+
+The rule is the natural one in the sense of §4: $R$ is the same likelihood ratio whose logarithm is the test statistic $t_\mu$. **Feldman–Cousins is therefore exactly the Neyman construction run with the likelihood-ratio statistic and with the thresholds taken from toys rather than from Wilks** — which is why it is the refinement named in §6.2 and in §17.6, and not a separate method.
+
+Both pathologies then vanish, for structural reasons rather than by tuning:
+
+- The ordering is fixed before the data, so there is no flip-flop to make: the construction itself decides where an interval stops being one-sided. The left panel shows FC coverage sitting on the nominal value everywhere.
+- Every outcome lies in the acceptance region of at least one $\mu$ — its own best fit, where $R = 1$ ranks first — so an interval can never come out empty. The right panel shows the belt for a Poisson with a known background $b = 3$: the interval is the vertical slice through the belt at the observed $n$, and it passes from an upper limit at small $n$ to a two-sided interval at large $n$ smoothly, with no gap and no discontinuity. At $n = 0$ it returns $[0,\ 0.95]$; at $n = 6$, $[0.16,\ 8.46]$.
+
+![Feldman–Cousins: flip-flopping undercovers (left); the FC belt for a Poisson with known background (right)](https://raw.githubusercontent.com/martafsilva31/phd-figures/main/sbi-shortcomings/sbi-foundations/feldman_cousins.png)
+
+**The fine print.** Three limitations matter. (i) For discrete data an acceptance region cannot carry probability exactly $1-\alpha$; it overshoots, so FC intervals slightly **over**-cover. That is conservatism, not overconfidence — valid, merely a little long. (ii) FC does not cure the fact that an experiment with a strong downward fluctuation still reports a limit stronger than its sensitivity: the interval is honest about coverage while flattering the experiment, which is the objection that motivated $\mathrm{CL}_s$ in other contexts. (iii) With nuisance parameters the construction becomes expensive — toys over the whole $(\mu, \theta)$ space — and the usual compromise, the profile construction, reintroduces an approximation and with it the possibility of miscoverage.
+
+**Why this belongs in this note.** Two conditions of §7 are precisely what the FC ordering is built for. Condition (D) is sensitivity to the boundary $\mu \ge 0$, which at 1 fb⁻¹ with ≈ 5.7 expected events is live rather than academic: a toy's scan minimum can sit at or below zero, exactly where the Wald parabola is invalid and where classical intervals misbehave. And condition (A)'s rate fold makes the model locally two-to-one in $\mu$ near the SM point, so restricting the best fit to the physical region is doing real work rather than being a formality. FC is therefore not decoration on §17.6: it is the ordering that makes the toy-calibrated fallback usable at this luminosity, and, being a Neyman construction, it carries the guarantee of §6.2 — correct coverage whether or not any asymptotic condition holds.
+
+### 6.4 Coverage vs the Asimov check
 
 The Asimov-vs-median comparison never looks at the truth: it compares two of the procedure's *own* sensitivity predictions against each other (expectation-level fit vs toy ensemble). A coverage measurement confronts intervals *with* the truth. They are different diagnostics probing the same underlying disease — a statistic whose sampling distribution is not what the analysis assumes — and they can disagree: a procedure can pass the Asimov check and still miscover, since nothing in "Asimov = median" pins the *absolute* scale of either. The two are independent, and both are run.
 
@@ -619,7 +648,7 @@ Each direction gives what it is, why it should work, how it would be done here, 
 
 **What.** Stop taking the asymptotic shortcut entirely: per hypothesis, calibrate the statistic's threshold with toys (§6.2), whatever the statistic — the classical construction wrapped around a modern statistic.
 **Why.** It is the *only* item on this list whose validity does not depend on (A), (B), (C) or (D): coverage is guaranteed by construction. The price is per-hypothesis toys and, with a poor statistic, longer intervals — validity is bought, efficiency still has to be earned.
-**How.** Belts from per-hypothesis toy quantiles of any chosen statistic (the NSBI $t_\mu$, a learned summary, anything); intervals by inversion; efficiency compared across statistics; Feldman–Cousins ordering as the refinement.
+**How.** Belts from per-hypothesis toy quantiles of any chosen statistic (the NSBI $t_\mu$, a learned summary, anything); intervals by inversion; efficiency compared across statistics; the Feldman–Cousins ordering of §6.3 as the refinement — which also supplies the boundary behaviour condition (D) demands at 1 fb⁻¹.
 **Outcomes.** This is less an experiment than the safety net under all of them — and combined with 17.1 it is the natural end-state sketched in §16.4: learned power, constructed validity.
 
 ### 17.7 The effective-sample-size diagnostic — measures (B) directly
@@ -657,6 +686,9 @@ Conceptual questions this note leaves open (operational ones live in the env-set
 | Coverage | Fraction of repeated experiments whose reported interval contains the truth; the operational meaning of an error bar (§6). |
 | Overconfidence | Coverage below the stated confidence level; intervals shorter than warranted. |
 | Neyman construction | Per-hypothesis acceptance regions from toy quantiles; coverage guaranteed by construction, no asymptotics (§6.2). |
+| Ordering rule | The freedom left open by the Neyman construction: *which* outcomes of probability $1-\alpha$ enter each acceptance region. Fixes efficiency and boundary behaviour, never validity (§6.3). |
+| Feldman–Cousins | The ordering rule that ranks outcomes by the likelihood ratio $P(x\mid\mu)/P(x\mid\hat{\mu}_{\rm phys})$ with the best fit restricted to the physical region; cures flip-flopping and empty intervals, never over-confident (§6.3). |
+| Flip-flopping | Deciding after seeing the data whether to quote an upper limit or a two-sided interval; makes the ordering data-dependent and undercovers — 85 % for a nominal 90 % (§6.3). |
 | Score | Derivative of the log-likelihood in the POI; a sum over events whose Gaussianity the CLT must deliver (§7B). |
 | Effective sample size $N_{\rm eff}$ | $(\Sigma u)^2/\Sigma u^2$; the representation-independent version of "events per bin". |
 | Regularity (condition A) | Non-vanishing Fisher information at the truth, identifiability, interior truth. |
@@ -687,7 +719,7 @@ Full annotated bibliography with locations and verification status: [literature.
 - §3 — toy recipe as presented by Tei (Ref. 0); Poisson process properties are textbook.
 - §4 — Wilks 1938 (Ref. 6); Wald 1943 (Ref. 7).
 - §5 — Cowan, Cranmer, Gross, Vitells 2011 + erratum (Ref. 2).
-- §6 — Neyman 1937 (Ref. 15); Cowan et al. (Ref. 2) for the asymptotic shortcut.
+- §6 — Neyman 1937 (Ref. 15); Cowan et al. (Ref. 2) for the asymptotic shortcut; §6.3 — Feldman & Cousins 1998 (Ref. 18), whose Table IV the belt figure is checked against.
 - §7 — classical (Cramér) regularity conditions; the $\mu^*$ algebra follows from §2.3's cross-sections.
 - §9 — CARL (Ref. 1); ATLAS NSBI implementation (Ref. 3); frontier of SBI (Ref. 10); mining gold (Ref. 11).
 - §13 — Hermans et al. (Ref. 5); Deep Ensembles (Ref. 16); BNRE (Ref. 13).

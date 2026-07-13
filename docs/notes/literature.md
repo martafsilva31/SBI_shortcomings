@@ -197,6 +197,27 @@ DOI: [10.1098/rsta.1937.0005](https://doi.org/10.1098/rsta.1937.0005).
 > toy-based calibration (a Monte Carlo Neyman construction) is the fallback when
 > Wilks/Wald fail, and the theory anchor for the foundations note's coverage section.
 
+### [SUPPORTING] Ref. 18 — Feldman & Cousins (1998)
+
+**G. J. Feldman and R. D. Cousins**, *A Unified Approach to the Classical Statistical
+Analysis of Small Signals*, **Phys. Rev. D 57 (1998) 3873**.
+arXiv: [physics/9711021](https://arxiv.org/abs/physics/9711021);
+DOI: [10.1103/PhysRevD.57.3873](https://doi.org/10.1103/PhysRevD.57.3873).
+*(Verified against arXiv/Crossref 2026-07-13; no local PDF yet.)*
+
+> Supplies the **ordering rule** that the Neyman construction (Ref. 15) leaves free: rank
+> outcomes by the likelihood ratio P(x|μ)/P(x|μ̂_phys), with the best-fit μ restricted to the
+> physical region, and fill each acceptance region in decreasing order of that ratio. Cures
+> two pathologies of small-signal limits: **flip-flopping** (choosing upper-limit vs central
+> interval after seeing the data, which undercovers — 85% for a nominal 90%) and **empty
+> intervals** under a downward fluctuation near a physical boundary. Caveats: over-covers for
+> discrete data; does not stop a downward-fluctuating experiment from quoting a limit better
+> than its sensitivity (the motivation for CLs); expensive with nuisance parameters.
+> Directly relevant to conditions (A) and (D) of the foundations note — the μ ≥ 0 boundary is
+> live at 1 fb⁻¹ — and the ordering behind mitigation #6 (toy-calibrated inference).
+> Table IV (Poisson with known background) is the numerical cross-check for the belt figure
+> in §6.3: n=0 gives [0, 2.44] at b=0, [0, 1.61] at b=1, [0, 1.08] at b=2.
+
 ---
 
 ## D. SBI / ML methods context
@@ -323,6 +344,7 @@ Local: [`refs/2506.00113_wifi_ensembles.pdf`](../refs/2506.00113_wifi_ensembles.
 | Ref. 15 (Neyman) | Coverage & the Neyman construction (foundations note, coverage section) |
 | Ref. 16 (Deep Ensembles) | Ensembling as model-uncertainty estimation (foundations note) |
 | Ref. 17 (wifi ensembles) | Mitigation #3, network side — the April meeting's method, identified 2026-07-13 (Phase 3, prong 2 / plan item 8d) |
+| Ref. 18 (Feldman–Cousins) | The ordering rule for the Neyman construction; mitigation #6 (toy-calibrated inference), and the μ ≥ 0 boundary behaviour that condition (D) needs (foundations note §6.3) |
 
 ---
 
