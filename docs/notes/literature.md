@@ -12,6 +12,7 @@
 > All arXiv IDs and journal references verified against arxiv.org / publisher pages
 > on 2026-07-09; every PDF title page checked against its citation. Refs. 14–16
 > verified against Inspire / Crossref / arXiv on 2026-07-13 (no local PDFs yet).
+> Ref. 17 verified against arXiv on 2026-07-13 (PDF downloaded, title page checked).
 
 ---
 
@@ -262,6 +263,43 @@ arXiv: [1612.01474](https://arxiv.org/abs/1612.01474).
 > estimate (training/model variability) and what toys estimate (data statistics) — the
 > two are complementary, and neither substitutes for the other.
 
+### [SUPPORTING] Ref. 17 — wᵢfᵢ ("wifi") ensembles (Benevedes & Thaler, 2025)
+
+**S. Benevedes, J. Thaler**, *Frequentist Uncertainties on Neural Density Ratios with
+wᵢfᵢ Ensembles*, MIT-CTP/5874.
+arXiv: [2506.00113](https://arxiv.org/abs/2506.00113) (v1 2025-05-30; v2 2025-09-24, hep-ph).
+Code: [github.com/benevedes/wifi-ensembles](https://github.com/benevedes/wifi-ensembles).
+Local: [`refs/2506.00113_wifi_ensembles.pdf`](../refs/2506.00113_wifi_ensembles.pdf).
+*(Verified against arXiv 2026-07-13; title page checked.)*
+
+> **This is the April meeting's "Wi-Fi ensemble method"** — the auto-transcription was
+> right and the name is a pun: *wᵢfᵢ* = weights **wᵢ** on basis functions **fᵢ**. Train M
+> networks fᵢ(x) (bootstrap resamples or a partition of the training set), **freeze them**,
+> model the log density ratio as a linear combination `log r̃(x|w) = Σᵢ wᵢ fᵢ(x)`, and fit
+> only the M weights on a *held-out* sample D_fit with a convex (symmetrised MLC) loss.
+> Because the loss is linear in w, the weight covariance follows in closed form — a
+> sandwich estimator `C = V⁻¹ U V⁻¹` (V = Hessian, U = score covariance) — giving
+> `σ²(x) = fᵢ(x) Cᵢⱼ fⱼ(x)` on the learned log-ratio, propagated to the POI by the
+> Gong–Samaniego pseudo-MLE result `σ²_GS = σ²_MLE (1 + σ²_MLE Aᵢ Cᵢⱼ Aⱼ)`. Hence
+> "trivial to apply": **no bootstrap loop over the whole analysis** — the uncertainty is an
+> analytic inflation of the usual MLE variance.
+>
+> **What it does and does not buy us.** It captures the statistical noise of the **finite
+> fitting sample** (C ~ O(1/N_fit)); the paper is explicit that it does *not* capture
+> mismodelling from limited network expressivity, training stochasticity, finite *training*
+> data, or simulator systematics. Two facts make it directly relevant here: (i) it inflates
+> the POI variance, i.e. it pushes against exactly the overconfidence this project measures;
+> (ii) the paper shows the **naive uniform-weight ensemble (Ref. 16 style) undercovers and
+> is biased**, while the fitted-weight version reaches nominal coverage (M = 32, quark/gluon)
+> — a published statement that plain deep ensembling is *not* a calibration fix.
+>
+> ⚠ **The caveat that matters for this project:** every guarantee above is **asymptotic**
+> (fixed M, N_fit → ∞; Gong–Samaniego is a delta-method inflation of σ²_MLE). Our failure
+> mode *is* the breakdown of asymptotics at O(100) events. So wifi's coverage guarantee does
+> not automatically transfer to the 1–10 fb⁻¹ regime — it is a **candidate mitigation to be
+> tested, not a fix to be assumed**, and testing it is itself an interesting experiment (a
+> method whose uncertainties are asymptotic, applied where asymptotics fail).
+
 ---
 
 ## E. Not yet verified — do not cite before checking
@@ -284,6 +322,7 @@ arXiv: [1612.01474](https://arxiv.org/abs/1612.01474).
 | Ref. 14 (Barlow–Beeston) | Mitigation #3 — MC stat uncertainties (Phase 3) |
 | Ref. 15 (Neyman) | Coverage & the Neyman construction (foundations note, coverage section) |
 | Ref. 16 (Deep Ensembles) | Ensembling as model-uncertainty estimation (foundations note) |
+| Ref. 17 (wifi ensembles) | Mitigation #3, network side — the April meeting's method, identified 2026-07-13 (Phase 3, prong 2 / plan item 8d) |
 
 ---
 

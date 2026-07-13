@@ -24,13 +24,14 @@ Full metrics table + figures in the notebook; scan tensors under `output/dim/`. 
    under Tei's convention (torch.median of raw curves); decomposition on identical tensors: 0.44
    (torch-median raw) / 0.71 (np-median raw) / 1.10 (per-toy Δ). Tei's NSBI direction check
    (0.87 @300 fb⁻¹) is robust under all conventions (foundations §8).
-2. **Mean occupancy alone does not collapse the effect**: at fixed mean occupancy the
-   higher-d/higher-L point is consistently worse (occ 0.57: 0.71 @ 3D/100 fb⁻¹ vs 0.44 @
-   4D/1000 fb⁻¹). The steep m4ℓ spectrum makes the occupancy *distribution* (many near-empty
-   cells) the relevant object — a refined effective-occupancy variable is the next design item.
-3. **Control at fixed 16 total bins stays near 1** (0.76–1.06 across d) — the bulk of the effect
-   tracks cell count, not dimensionality per se. Second-order structure is within ~200-toy median
-   noise; needs more toys to resolve.
+2. **Mean occupancy alone does not collapse the effect** — ⚠ superseded 2026-07-13: this was a
+   raw-convention observation (occ 0.57: 0.71 @ 3D/100 fb⁻¹ vs 0.44 @ 4D/1000 fb⁻¹, torch-raw);
+   under the Δ convention there is no width-ratio effect to collapse (see item 1), so the
+   effective-occupancy refinement is moot for width ratios (possibly still relevant for coverage).
+3. **Control at fixed 16 total bins stays near 1** — under the Δ convention *both* families sit
+   near 1 (controls 0.97–1.09 at 1000 fb⁻¹, occupancy scan 1.06–1.10), so the control no longer
+   separates anything; historically (raw convention) it was 0.76–1.06 vs 0.44 and carried the
+   cell-count argument.
 4. Asimov μ̂ = 1.000 at all 32 points; zero non-finite toys (the ν = 0-bin concern didn't
    materialise with μ ∈ [0, 8]).
 

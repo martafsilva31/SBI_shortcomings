@@ -1,0 +1,28 @@
+# wifi-ensemble basis training: M=16 sig_over_bkg replicas, one GPU job each.
+# Each member sees its own Poisson bootstrap of the training split (CARL_BOOTSTRAP_SEED=member).
+# Coverage is then evaluated for M in {4, 8, 16} by subsetting — no extra training needed.
+# Plan item 8e (docs/phase3-fixes.md); same Nikhef pattern as nsbi_pathB_train.sub.
+universe                = vanilla
+executable              = /project/atlas/Users/mfernand/SBI_shortcomings/scripts/wifi_train_basis.sh
+arguments               = $(member)
+
++SingularityImage       = "/project/atlas/Users/mfernand/SBI_shortcomings/asimov-aymptotics-check/ml4fp-sbi-tutorial.sif"
++JobCategory            = "medium"
+
+request_gpus            = 1
+request_cpus            = 2
+request_memory          = 32G
+request_disk            = 8G
+# NOTE: request_cpus is deliberately small. The GPU nodes' cores are fully claimed by other users
+# (2026-07-13: free GPUs, zero free CPUs), and an 8-core request matched nothing at all — GPUs and
+# spare cores never co-occurred on the same machine. 2 cores + CARL_NUM_WORKERS=2 matches as soon as
+# any core frees. Memory is not the binding constraint (hundreds of GB free on those nodes).
+
+log                     = /project/atlas/Users/mfernand/SBI_shortcomings/output/wifi/condor/member_$(member).log
+output                  = /project/atlas/Users/mfernand/SBI_shortcomings/output/wifi/condor/member_$(member).out
+error                   = /project/atlas/Users/mfernand/SBI_shortcomings/output/wifi/condor/member_$(member).err
+
+should_transfer_files   = NO
+getenv                  = False
+
+queue member from seq 1 16 |

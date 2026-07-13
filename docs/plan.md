@@ -4,9 +4,12 @@
 
 - [ ] Phase 1 NSBI reproduction — **path A** (Tei's checkpoints); waiting on his `run/h4l/` dir (see
       docs/env-setup-and-code-walkthrough.md §8). GPU node available. Ready when it lands: patch
-      drafts + path B launch kit in docs/nsbi-repro-prep.md
-- [ ] Env-setup Logbook entry — local draft rewritten via /writeup (2026-07-10); awaiting Marta's
-      format sign-off (first entry of the project) + Notion connector auth before the push
+      drafts + path B launch kit in docs/nsbi-repro-prep.md. ⚠ **Tei unresponsive as of 2026-07-13**
+      — everything downstream of path A (items 13, 8d-execution, the NSBI overlay) is parked; work
+      is being routed to the unblocked prongs meanwhile
+- [ ] Env-setup Logbook entry — **published to Notion 2026-07-13** (page ID in docs/notion_map.json;
+      connector auth resolved, 4 Logbook + 2 Notes entries live). Remaining: Marta's format sign-off
+      on it as the template for the rest — that sign-off is what still gates item 15
 
 ## Backlog
 
@@ -24,9 +27,11 @@
       dimensionality effect under the Δ convention); convention DECIDED provisionally 2026-07-13
       (Marta): Δ-primary + np-median-raw secondary, torch.median retired — ⚠ not yet team-ratified,
       goes into the item-7 Tei message
-- [ ] Refine the occupancy metric (mean occupancy does not collapse the grid — distribution matters)
 - [x] Toy-count scaling check (2026-07-11, via Phase-3 item 2 — and it exposed the convention issue)
-- [ ] NSBI overlay on the same panels (after path-B reproduction)
+- [ ] NSBI overlay on the same panels (after path A lands), incl. an effective-occupancy axis for
+      the comparison — absorbs the retired "refine the occupancy metric" item (2026-07-13: its
+      width-ratio motivation vanished under the Δ convention; the surviving μ̂-scatter signal is
+      noted in the study note)
 
 ### Phase 3 — Proposed fixes (plan approved 2026-07-11; docs/phase3-fixes.md is the study note)
 
@@ -40,15 +45,35 @@ M2 — rate-degeneracy mechanism (notebooks/rate_degeneracy.ipynb):
 - [x] 5. Per-bin fold characterisation + foundations addendum
 - [x] 6. κ=√μ reparametrisation check (LR-invariance demo + what changes)
 - [ ] 7. Tei message (Marta sends): fold mechanism + median-convention issue + ratification of the
-      provisional Δ-primary convention (adopted 2026-07-13)
+      provisional Δ-primary convention (adopted 2026-07-13) + wifi-method + [2, 1.83] confirmations.
+      **Drafted 2026-07-13 — full text parked in docs/phase3-fixes.md** (Tei unresponsive; send when
+      he resurfaces). Nothing in the project now blocks on his reply to it: the wifi ask (§3 of the
+      draft) was self-answered — see below
 
 M3 — prong-2 gate:
 - [x] 8. MC-stat relevance per config (dimensionality notebook §10) → BB-lite go/no-go (Marta)
       → DECIDED 2026-07-13 (Marta): MC-stat uncertainties go in, in every scenario
-- [ ] 8a. BB-lite closed-form profiling in stats/binned.py (sub-repo; approved 2026-07-13)
-- [ ] 8b. BB-lite overlay in the dimensionality notebook (μ̂ + Δ-convention width ratios, 32 points)
-- [ ] 8c. BB-lite coverage spot-check (bartlett notebook, 1D/4D @ 100/1000 fb⁻¹)
-- [ ] 8d. NSBI MC-stat treatment — design note (gated on path A)
+- [x] 8a. BB-lite closed-form profiling in stats/binned.py (2026-07-13: γ̂ closed form, exactness
+      checks pass, sub-repo file #2 modified)
+- [x] 8b. BB-lite overlay in the dimensionality notebook (2026-07-13: widths +≤2.6% at 1000 fb⁻¹,
+      ratio_D shift ≤0.013 — no conclusion changes; §11)
+- [x] 8c. BB-lite coverage spot-check (2026-07-13: 0.594→0.608 / 0.644→0.649 at 1000 fb⁻¹ —
+      under-coverage persists, fold attribution confirmed; bartlett §10)
+- [x] 8c-bis. **"Wi-Fi ensemble" method identified (2026-07-13)** — not a garbled transcription:
+      **wᵢfᵢ ensembles**, Benevedes & Thaler, arXiv:2506.00113 (frozen basis nets fᵢ, fitted weights
+      wᵢ, analytic sandwich covariance → Gong–Samaniego inflation of σ²_μ; no bootstraps). Written up
+      as Ref. 17 (literature.md) + foundations §15.1; PDF in docs/refs/. ⚠ Its guarantees are
+      **asymptotic** — a candidate mitigation to be *tested*, not assumed, in our regime
+- [ ] 8d. NSBI MC-stat treatment — design note. **Method side now settled** (template = BB-lite;
+      network = wifi, item 8c-bis); *execution* still gated on path A (wifi needs M working basis
+      networks; our path-B r_sbi/bkg never left the ln2 floor)
+- [~] 8e. **wifi prototype on `sig_over_bkg` — APPROVED 2026-07-13, in flight.** Asks foundations
+      §17.3's question (does an asymptotically-derived inflation restore coverage where asymptotics
+      fail?) on the mixture fraction κ — Ref. 17's own task — with a **truth-ratio control** from the
+      per-event matrix elements that the paper could not build. Engine + closure test DONE (w*
+      recovered, C ~ O(1/N) verified); `Process.resample()` implemented (the sub-repo's own wifi TODO
+      stub); M=16 basis trainings submitted (condor 5086738, idle — GPU nodes have zero free CPUs).
+      Files: scripts/wifi_train_basis.{sh,sub}, scripts/wifi_fit.py, notebooks/wifi_ensembles.ipynb
 
 M4 — prong-3 deep-set prototype:
 - [x] 9. Design note (files named for approval) — docs/phase3-fixes.md §prong-3
@@ -62,8 +87,13 @@ M4 — prong-3 deep-set prototype:
 
 Blocked / closure:
 - [ ] 13. NSBI coverage+Bartlett audit on path A (blocked on Tei)
-- [ ] 14. Re-execute all Phase-3 notebooks end-to-end (validation)
-- [ ] 15. Logbook entries + commits (gated on Notion auth + format sign-off)
+- [x] 14. Re-execute all Phase-3 notebooks end-to-end (2026-07-13: bartlett + dimensionality with
+      the Δ/BB-lite updates, then rate_degeneracy, deepset_coverage, deepset_neyman — all headless
+      in-container; documented numbers reproduced: fold range, 0.0% rate Fisher share, v0 prior
+      collapse, v1 Neyman 0.684/0.694 at the fold byte-identical)
+- [ ] 15. Logbook entries + commits — Notion auth is no longer a gate (6 entries live since
+      2026-07-13); remaining gates: Marta's format sign-off, and the Phase-3 docs/notebooks are still
+      uncommitted in the working tree (8 files + this session's 4 doc updates — commit proposed)
 
 ### Phase 4 — Dataset extension (coordinate with Lydia)
 

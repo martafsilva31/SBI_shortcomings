@@ -84,6 +84,152 @@ Per-bin effective MC sample sizes n_eff = (Σw)²/Σw² and fractional MC errors
 configs — dimensionality notebook §10. Decision (Marta) after numbers land: implement
 Barlow–Beeston-lite (needs profiling machinery in `stats/`) or document-and-skip.
 
+### Prong 2 executed (items 8a–8c, 2026-07-13) — BB-lite in everywhere, conclusions unchanged
+
+Decision (Marta, 2026-07-13): MC-stat uncertainties in **every** scenario, overriding the
+document-and-skip recommendation. Implemented as Barlow–Beeston-lite with closed-form per-bin
+profiling γ̂_b = (n_b+τ_b)/(ν_b(μ)+τ_b), τ_b = n_eff,b (`stats/binned.py`, new
+`poisson_log_likelihood_scan[_toys]_bblite`; constraint written relative to γ=1 for float32
+stability; second modified file in the sub-repo). No minimiser needed — the scans stay fully
+vectorised. Exactness checks pass: n_eff→∞ reproduces the plain scan; Asimov μ̂ = 1.000 at all
+32 grid points.
+
+- **32-point overlay** (dimensionality notebook §11, Δ-convention metrics, paired on the same
+  toys): Asimov 1σ widths grow ≤0.2% at 100 fb⁻¹ and 1.8–2.6% at 1000 fb⁻¹; ratio_D shifts by
+  ≤0.013. Even at 4D (51% median per-bin MC error) the *data* statistical error per bin dominates
+  — BB-lite alters no conclusion of the dimensionality study.
+- **Coverage spot-check** (bartlett notebook §10, paired 1000 fresh toys per point): naive 68%
+  coverage hist_1d@1000 0.594→0.608 (±0.016) and occ_4d@1000 0.644→0.649 with BB-lite; at
+  100 fb⁻¹ no change (0.717→0.719, 0.705→0.706). E[t(1)] drops only 1.19→1.15 / 1.07→1.05. The
+  under-coverage **persists with MC-stat nuisances profiled — confirming the audit's fold
+  attribution** (the falsifiable expectation held).
+- Same run: the dimensionality metrics table is now Δ-primary + np-raw secondary (provisional
+  convention, see Next block); at 1000 fb⁻¹ ratio_D = 1.06–1.10 flat across 1D–4D, i.e. no
+  dimensionality effect under the primary convention, as the item-2/4 decomposition predicted.
+- Both notebooks re-executed end-to-end in the container (headless nbconvert via the
+  `output/pyextra` toolchain); pre-existing §8.1 numbers reproduced identically (seed-stable).
+
+### Validation re-run (plan item 14, 2026-07-13) — closed
+
+All Phase-3 notebooks re-executed end-to-end in-container the same day: bartlett + dimensionality
+(with the Δ/BB-lite updates, above), then rate_degeneracy, deepset_coverage, deepset_neyman
+(CPU; checkpoints loaded map_location='cpu'). Documented numbers reproduce: per-bin fold range
+[0.46, 6.7] and 0.0% rate Fisher share with ×23 κ-suppression (M2); v0 prior collapse (coverage
+0.000 at μ_true=0.5 @1 fb⁻¹, σ 1.15→0.29–0.39 across L) and the −0.2 fold bias at 1000 fb⁻¹
+(coverage 0.642/0.646); v1 Neyman no-under-coverage 0.668–0.866 with the fold points 0.684/0.694
+@1000 fb⁻¹ byte-identical to the 2026-07-12 run. Remaining open in this phase: items 7 (Marta),
+13 and 8d (blocked on Tei), 15 (gated on format sign-off).
+
+### 2026-07-13 — the "Wi-Fi ensemble" is identified: wᵢfᵢ ensembles (item 7 prep; unblocks 8d's design)
+
+The April meeting's *"new Wi-Fi ensemble method"* — flagged in foundations §15/§18 as a garbled
+auto-transcription needing team confirmation — **is not garbled**. It is **wᵢfᵢ ("wifi") ensembles**,
+Benevedes & Thaler, arXiv:2506.00113 (v2, hep-ph, MIT-CTP/5874) — a pun on weights **wᵢ** × basis
+functions **fᵢ**. PDF downloaded to `docs/refs/`, title page checked, written up as **Ref. 17** in
+literature.md and as **foundations §15.1**. Tei's confirmation is now a courtesy, not a dependency.
+
+**Method in one paragraph.** Train M networks fᵢ(x) (bootstrap resamples or a partition of the
+training set), *freeze* them, and treat them as a **basis**, not as M competing answers: model
+`log r̃(x|w) = Σᵢ wᵢ fᵢ(x)` and fit only the M weights on a **held-out** sample with a convex
+(symmetrised MLC) loss. Linearity in w buys closed forms: sandwich covariance `C = V⁻¹UV⁻¹`, pointwise
+ratio uncertainty `σ²(x) = fᵢ(x)Cᵢⱼfⱼ(x)`, and Gong–Samaniego propagation to the POI,
+`σ²_GS = σ²_MLE(1 + σ²_MLE AᵢCᵢⱼAⱼ)`. That is why MC-stat uncertainties are *"trivial to apply"*:
+**no bootstrap loop around the whole analysis** — it is an analytic *inflation* of σ²_MLE.
+
+**Two boundaries, both load-bearing for us:**
+1. **Scope.** C ~ O(1/N_fit) is the noise of the finite **fitting** sample. The paper is explicit that
+   it does *not* cover mismodelling from network expressivity, training stochasticity, finite
+   *training* data, or simulator systematics. It closes one term of condition (C), not the condition.
+2. **Regime.** Every guarantee is **asymptotic** (fixed M, N_fit → ∞; Gong–Samaniego is a delta-method
+   inflation presupposing the Wald picture). Our failure mode *is* the breakdown of asymptotics at
+   O(100) events — so wifi is a **candidate mitigation to be tested, not a fix to be assumed**.
+
+**Bonus finding, relevant to prong 3 and to §13.2:** the paper shows the **naive uniform-weight
+ensemble undercovers and is biased**, while the fitted-weight version reaches nominal coverage (M=32,
+quark/gluon). Published support for a claim this project keeps making: ensembling-as-averaging is not
+a calibration fix.
+
+**Consequence for item 8d (NSBI MC-stat design).** The network-side route is now named: template-side
+= BB-lite on the rate/shape inputs (done for the histogram family, items 8a–8c); network-side = wifi
+ensembles on the CARL ratios. **Execution stays blocked on path A** — wifi needs M *working* basis
+networks and our path-B r_sbi/bkg never left the ln2 floor. But the design is no longer blocked on the
+method's *identity*, and there is an unblocked prototype route (below) that Marta has not yet approved.
+
+**Proposed (NOT started — needs Marta's approval): prototype wifi on the ratio that does train.**
+Path B's `sig_over_bkg` is a keeper (val_loss 0.419, r rising 0.82 → 11.6 across m4ℓ quartiles); only
+`sbi_over_bkg` failed. Training M ≈ 8–32 bootstrap replicas of `sig_over_bkg` and running the wifi
+machinery on it would build and validate the whole apparatus (basis freeze → weight fit → sandwich C →
+Gong–Samaniego on μ) against a ratio we trust, so that when Tei's checkpoints land the method is ready
+to apply rather than being written from scratch. It would also answer the sharp question of foundations
+§17.3 in a controlled setting: *does an asymptotically-derived inflation restore coverage where
+asymptotics fail?* Cost: M GPU trainings (each ~ the 2026-07-10 run) + one notebook.
+
+### 2026-07-13 — item 8e: wifi prototype on `sig_over_bkg` (APPROVED by Marta; running)
+
+**What is being inferred, and what is not.** Not μ. The NSBI μ-scan needs `r_sbi/bkg`, which path B never
+learned (ln2 floor) and which path A is blocked on. So the prototype uses the ratio that *does* train,
+`sig_over_bkg`, and infers the **mixture fraction κ** of signal in a sig+bkg mixture — which is exactly the
+task of Ref. 17's own LHC demonstration (their quark fraction), via their Eq. (27),
+`log L(x|κ) = log(κ r(x) + (1-κ))`. This is a **methodology testbed, not a physics measurement**: κ is a
+mixture fraction, μ is a signal strength with interference, and they are not the same parameter. What
+transfers is the machinery and the answer to the §17.3 question.
+
+**The control Benevedes & Thaler could not build.** Our events carry per-event matrix elements, so the
+**truth** ratio is known analytically: r_true(x) ∝ msq_sig(x)/msq_bkg(x), normalised so E_bkg[r_true] = 1
+(their Eq. 6). They had no truth ratio for jets. With it we can separate ratio **noise** (which wifi
+propagates) from ratio **bias** (which it explicitly does not) — the two halves of condition (C).
+
+**Implementation (2026-07-13).**
+- `Process.resample()` — implemented the sub-repo's own **"For wifi ensembles. TODO: IMPLEMENT ME"** stub in
+  `physics/simulation/mcfm.py`. Its pre-existence is independent corroboration of the identification: the
+  method was already on this codebase's roadmap. Poisson bootstrap of a weighted sample (weight × Poisson(1),
+  cross-section renormalised). Verified: 37.3% zero-weight events (e⁻¹ = 36.8% ✓), Σw preserved,
+  seed-reproducible, kinematics untouched, n_eff → 0.58 × original.
+- `datasets/balanced.py` — bootstrap wired into the **training split only** (env `CARL_BOOTSTRAP_SEED`;
+  unset = original behaviour). Validation deliberately NOT resampled, so early stopping stays comparable
+  across members. Also `CARL_NUM_WORKERS` (default 8 = unchanged) — see the condor note below.
+- `scripts/wifi_train_basis.{sh,sub}` — M = 16 basis nets, one GPU job each, proven path-B recipe unchanged
+  (n_layers 3, n_nodes 128, lr 1e-3); **initialisation held fixed at seed 42 on purpose**, so ensemble
+  diversity comes from the bootstrap (what wifi propagates) and not from init noise (what Ref. 16 measures).
+- `scripts/wifi_fit.py` — the engine: symmetrised MLC loss (Eq. 8) minimised by Newton with backtracking,
+  sandwich covariance C = V⁻¹UV⁻¹ (Eqs. 11/18), σ²(x) = fᵢCᵢⱼfⱼ (Eq. 20), κ̂ by bisection (boundary-aware),
+  and σ²_GS = σ²_MLE(1 + σ²_MLE AᵢCᵢⱼAⱼ) with A analytic (Eqs. 22–24; A_i = Σ ρ fᵢ/g²).
+- `notebooks/wifi_ensembles.ipynb` — narrative + figures (imports the engine, does not reimplement it).
+
+**Engine closure test — PASSED** (n = N(1,1), d = N(0,1), basis [x, 1] ⇒ well-specified with w* = (1, −½)):
+ŵ = (1.0008, −0.4972) at N=2k and (1.0034, −0.5035) at N=200k; pulls O(1) (0.02–1.16), so the sandwich
+covariance is honest; σ_w = 0.0426 → 0.0138 → 0.0044 per decade, i.e. ratios 3.09 / 3.14 against √10 = 3.16
+— **C ~ O(1/N) confirmed exactly as Ref. 17 states**. κ inference unbiased (bias ≤ 0.009), coverage 0.650
+(400 trials, ±0.024). The machinery is correct independently of any network.
+
+**Condor note (cost us a resubmission).** The first submission (cluster 5086708, 8 CPUs/job) matched **zero**
+slots: the Nikhef GPU nodes had free GPUs but **zero free CPUs**, and `condor_q -better-analyze` showed the
+"≥8 CPUs" and "≥1 GPU" conditions each matching 5 slots but never the same slot. Resubmitted as **cluster
+5086738** with 2 CPUs + `CARL_NUM_WORKERS=2`. Jobs sit idle until other users release cores — GPU-node CPU
+contention, not a fault in the setup. Results and verdict to follow in the notebook.
+
+### 2026-07-13 — item-7 message to Tei: DRAFT (Marta sends; parked while he is unresponsive)
+
+Kept here so it survives outside chat. Four asks, none of them blocking any more; every number traces
+to this note, dimensionality-study.md, or env-setup §8 Q3.
+
+> Hi Tei,
+>
+> A few updates and asks from the shortcomings study — nothing needs code from you, just confirmations.
+>
+> **1. The high-luminosity coverage failure is an interference rate fold, not occupancy.** The destructive interference makes the total rate stationary in μ at the SM: dν_tot/dμ at μ=1 is σ_S + σ_I/2 ≈ 0.0067 fb (×46 suppressed), with ν_tot minimised at μ* = (σ_I/2σ_S)² ≈ 0.957 — a two-to-one map in μ right at the SM. Confirmed signatures on the histogram analysis: σ(μ̂) scales like L^(−1/4) (measured 0.70 → 0.42, ratio 0.60 vs 0.56 predicted), μ̂ biased low (mean 0.86 at 1000 fb⁻¹), var[t(1)] ≈ 3.2 vs the χ²₁ value of 2, and the miscoverage is localised at the fold: 68% intervals cover ~0.60 at μ_true ∈ {0.957, 1} at 1000 fb⁻¹, recovering to 0.65–0.71 at {0.5, 2}. Per-bin folds span μ*_b ∈ [0.46, 6.7], so shape partially rescues the global fold, but the rate term carries 0.0% of the Fisher information at μ=1. The effect grows with luminosity, is binning-independent, and lives in the μ-parametrisation — so it applies identically to the NSBI setup. A κ=√μ reparametrisation provably cannot help (the likelihood ratio is invariant under it). Bartlett correction is only a partial patch: coverage 0.585 → 0.641 against 0.683 nominal.
+>
+> **2. Median convention — please ratify.** The Asimov-vs-median width ratio is convention-dependent. Decomposed on identical scan tensors (4D histogram, 1000 fb⁻¹): **0.44** with torch.median of raw curves (torch takes the lower middle element at even toy counts), **0.71** with np.median of raw curves, **1.10** with the median of per-toy min-subtracted (Δ) curves — i.e. no dimensionality effect at all under the Δ convention. We provisionally adopted on 2026-07-13: Δ curves as the primary comparator, np.median-of-raw reported alongside as an estimator-variance observation, torch.median retired. Your 300 fb⁻¹ NSBI direction check is robust under all three conventions (0.87). OK to make this the team convention?
+>
+> **3. "wifi ensemble" method — found it, just confirming.** We believe the April-meeting method is Benevedes & Thaler, "Frequentist Uncertainties on Neural Density Ratios with wᵢfᵢ Ensembles" (arXiv:2506.00113) — frozen basis networks with fitted weights and an analytic sandwich covariance, propagated to the POI by Gong–Samaniego, no bootstraps. Is that the one? We have written it into our notes on the assumption that it is.
+>
+> **4. The [2, 1.83] cross-section prefactors.** Our reading: 2 = channel counting (distinct-flavour 2e2μ → all e/μ 4ℓ channels), 1.83 = a flat higher-order QCD k-factor applied commonly to SIG/INT/BKG. Can you confirm, and give the exact provenance of the 1.83?
+>
+> (And whenever the run/h4l checkpoints plus your r_sbi/bkg training recipe are ready, path A is set up to consume them unchanged.)
+>
+> Thanks!
+> Marta
+
 ## Prong 3 — toy-ensemble deep-set prototype: DESIGN NOTE (plan item 9 — files named for approval)
 
 **Goal (v0, deliberately minimal):** demonstrate that a permutation-invariant network trained on many

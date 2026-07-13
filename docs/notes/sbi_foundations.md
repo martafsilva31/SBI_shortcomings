@@ -24,7 +24,7 @@
 | 12 | Why could NSBI be overconfident? | Four hypotheses, each mapped to a condition of §7 — which is what makes them distinguishable experiments. |
 | 13 | What the SBI literature knows | Every benchmarked SBI family can be overconfident; expected coverage is the diagnostic; ensembles and BNRE are the offered cures. |
 | 14 | The Bartlett correction | Fix the finite-sample mean of the LR statistic and its whole distribution approaches χ² an order faster — for regular, correctly-specified models. |
-| 15 | MC statistical uncertainties: Barlow–Beeston | The simulation is finite too; per-bin nuisance parameters make the likelihood admit its own MC ignorance. |
+| 15 | MC statistical uncertainties: Barlow–Beeston, and wifi ensembles | The simulation is finite too; per-bin nuisance parameters make the likelihood admit its own MC ignorance. §15.1: the network-side counterpart — the April meeting's "Wi-Fi" method, identified (wᵢfᵢ ensembles) and bounded. |
 | 16 | Deep Sets and toy-ensemble training | Any permutation-invariant function is ρ(Σφ); sum pooling carries the sample size — the thing standard NSBI training never sees. |
 | 17 | The research programme | Seven directions, each with what/why/how and what every outcome would mean. |
 | 18 | Open questions | Conceptual, not operational. |
@@ -479,7 +479,15 @@ $$n_{\rm eff}=\frac{\big(\sum_i w_i\big)^2}{\sum_i w_i^2}$$
 
 **Why it belongs in this project's toolbox:** it is the conservative correction that attacks the *simulation-side* part of condition (C) — the one piece of "the likelihood is not exact" that has a classical, guaranteed-valid fix. It will not repair a learned ratio's bias, but it removes one alibi: any overconfidence that survives MC-stat profiling cannot be blamed on finite simulation.
 
-> One loose end from the team discussion, preserved deliberately: the April meeting refers to a *"new Wi-Fi ensemble method"* (auto-transcription; the name is garbled) with which MC-stat uncertainties are *"trivial to apply"*. The context suggests an ensemble-based propagation of template/training uncertainty. **The actual method name needs confirming with the team** (§18) before it can be cited or adopted.
+### 15.1 The network-side counterpart: wifi ensembles (the April meeting's method, identified 2026-07-13)
+
+Barlow–Beeston answers "the *templates* were estimated from finite MC". Its network-side counterpart answers "the *learned ratio* was estimated from finite data" — and the April meeting's *"new Wi-Fi ensemble method"*, with which MC-stat uncertainties are *"trivial to apply"*, turns out to be exactly that. The transcription was never garbled: the method is **wᵢfᵢ ensembles** (Ref. 17, Benevedes & Thaler 2025), a pun on weights **wᵢ** times basis functions **fᵢ**.
+
+**The construction.** Train M networks $f_i(x)$ (bootstrap resamples, or a partition of the training set), then **freeze them** and treat them as a *basis* rather than as M competing answers. Model the log density ratio as a linear combination, $\log \tilde r(x|w) = \sum_i w_i f_i(x)$, and fit only the M weights on a **held-out** sample with a convex (symmetrised MLC) loss. Because the loss is linear in $w$, everything downstream is closed-form: a sandwich covariance $C = V^{-1} U V^{-1}$ ($V$ = Hessian of the loss, $U$ = score covariance) gives a pointwise uncertainty on the learned log-ratio, $\sigma^2(x) = f_i(x)\, C_{ij}\, f_j(x)$, which propagates to the POI by the Gong–Samaniego pseudo-MLE result $\sigma^2_{\rm GS} = \sigma^2_{\rm MLE}\,(1 + \sigma^2_{\rm MLE} A_i C_{ij} A_j)$. That is the sense in which it is *trivial to apply*: **no bootstrap loop over the entire analysis** — the uncertainty arrives as an analytic *inflation* of the usual MLE variance.
+
+**Read it against §13.2, because it settles an argument made there.** Plain deep ensembling (Ref. 16) averages M networks with uniform weights $1/M$ and calls their spread the model uncertainty. Benevedes & Thaler show that this **naive uniform-weight ensemble undercovers and is biased**, while *fitting* the weights and carrying their covariance reaches nominal coverage (M = 32, quark/gluon jets). Ensembling-as-averaging is not a calibration fix; ensembling-as-a-fitted-basis, with the fit's covariance propagated, can be.
+
+**But do not adopt it uncritically here.** Two boundaries matter. (i) *Scope:* the paper is explicit that $C \sim O(1/N_{\rm fit})$ captures the noise of the finite **fitting** sample — **not** mismodelling from limited network expressivity, training stochasticity, finite *training* data, or simulator systematics. It closes one term of condition (C), not the condition. (ii) *Regime:* every guarantee is **asymptotic** (fixed M, $N_{\rm fit} \to \infty$; Gong–Samaniego is a delta-method inflation of $\sigma^2_{\rm MLE}$, which presumes the Wald picture of §7 in the first place). This project exists because that picture fails at O(100) events. So wifi is a **candidate mitigation to be tested, not a fix to be assumed** — and the test is itself the interesting experiment: what does a method whose uncertainties are derived asymptotically do in the regime where asymptotics break? It inflates variances, so it pushes in the right direction against overconfidence; whether it inflates them *enough*, and at the right places in μ, is an empirical question this project is unusually well equipped to ask (§17.3).
 
 ---
 
@@ -533,7 +541,8 @@ Each direction below is written to be read on its own: what it is, why it should
 
 **What.** Barlow–Beeston(-lite) profiling in both analyses (§15).
 **Why.** Conservative by construction; removes the "your templates were finite" alibi from every other comparison; the widening concentrates exactly where occupancy is worst, so it doubles as an occupancy probe.
-**How.** Per-bin γ with closed-form profile and n_eff constraints in the histogram family; for NSBI, template-side profiling of the rate/shape inputs, with the network-side part belonging to 17.1/17.5. Confirm the *"Wi-Fi ensemble"* method name with the team (§15) — if it is an ensemble-based MC-stat propagation, it plugs in here.
+**How.** Per-bin γ with closed-form profile and n_eff constraints in the histogram family; for NSBI, template-side profiling of the rate/shape inputs, plus the **network side via wifi ensembles** (§15.1, Ref. 17): M frozen basis networks, weights fitted on a held-out sample, the analytic weight covariance propagated to μ by Gong–Samaniego. The April meeting's method is identified (2026-07-13) and is no longer a blocker on this direction; what it needs is a *test*, not a confirmation.
+**The sharp version of the test.** wifi's uncertainties are themselves asymptotic (fixed M, N_fit → ∞), so applying them at 1–10 fb⁻¹ asks whether an asymptotically-derived inflation can repair a failure *caused by* the breakdown of asymptotics. Both outcomes are publishable: it restores coverage → the missing ingredient was ratio-estimation noise, and the cure is cheap; it does not → the overconfidence is not fitting-sample noise at all, and hypothesis 3 (sample-size blindness, §17.1) survives a serious challenge from the one method the field would reach for first.
 **Outcomes.** If miscoverage persists with MC-stat profiled, finite simulation is exonerated and the remaining suspects are (A)/(B)/(C-network). If it vanishes, the entire story was template statistics — cheapest possible resolution.
 
 ### 17.4 The dimensionality study — separates (B) from (C) with no ML in sight
@@ -576,7 +585,7 @@ Conceptual questions this note leaves open (operational ones live in the env-set
 - **Where does the histogram itself break?** At what effective occupancy does a plain histogram start violating the property? That empirically locates the asymptotic boundary in a system with no network in it.
 - **Can the Asimov check and expected coverage be related quantitatively?** §13.1 supplies the dictionary (ECP = prior-averaged frequentist coverage); a pooling protocol that lets both literatures' evidence bear on one number is missing.
 - **Which generator produced the samples?** Not established by any file, comment, or slide — worth two minutes of Tei's time, and probably prerequisite to explaining the cross-section prefactors in the dataset normalisation.
-- **What is the "Wi-Fi ensemble" method?** The April transcript's garbled name (§15) — confirm with the team before citing or adopting.
+- ~~**What is the "Wi-Fi ensemble" method?**~~ **RESOLVED 2026-07-13** — not garbled: *wᵢfᵢ ensembles*, Benevedes & Thaler (Ref. 17, arXiv:2506.00113), a pun on weights wᵢ × basis functions fᵢ. Written up in §15.1; Tei's confirmation is a courtesy, not a dependency. The question it *becomes*: **does an asymptotically-derived uncertainty inflation restore coverage in a regime defined by the failure of asymptotics?** (§17.3.)
 
 ---
 
@@ -626,6 +635,6 @@ Full annotated bibliography with locations and verification status: [literature.
 - §9 — CARL (Ref. 1); ATLAS NSBI implementation (Ref. 3); frontier of SBI (Ref. 10); mining gold (Ref. 11).
 - §13 — Hermans et al. (Ref. 5); Deep Ensembles (Ref. 16); BNRE (Ref. 13).
 - §14 — Bartlett 1937 (Ref. 8); Cowan 2019 (Ref. 9).
-- §15 — Barlow & Beeston 1993 (Ref. 14).
+- §15 — Barlow & Beeston 1993 (Ref. 14); §15.1 — wifi ensembles, Benevedes & Thaler 2025 (Ref. 17), with Gong–Samaniego pseudo-MLE propagation as cited therein.
 - §16 — Deep Sets (Ref. 12: Theorem 2, §3.1).
 - §17 — the anchors above, per direction; §17.6 is Neyman (Ref. 15) + Feldman–Cousins ordering as refinement.
