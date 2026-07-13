@@ -202,11 +202,22 @@ covariance is honest; σ_w = 0.0426 → 0.0138 → 0.0044 per decade, i.e. ratio
 — **C ~ O(1/N) confirmed exactly as Ref. 17 states**. κ inference unbiased (bias ≤ 0.009), coverage 0.650
 (400 trials, ±0.024). The machinery is correct independently of any network.
 
-**Condor note (cost us a resubmission).** The first submission (cluster 5086708, 8 CPUs/job) matched **zero**
-slots: the Nikhef GPU nodes had free GPUs but **zero free CPUs**, and `condor_q -better-analyze` showed the
-"≥8 CPUs" and "≥1 GPU" conditions each matching 5 slots but never the same slot. Resubmitted as **cluster
-5086738** with 2 CPUs + `CARL_NUM_WORKERS=2`. Jobs sit idle until other users release cores — GPU-node CPU
-contention, not a fault in the setup. Results and verdict to follow in the notebook.
+**Data-path validation — PASSED (before spending the GPU time).**
+- *Datamodule*: the bootstrap fires on the **training split only** (36.8% zero-weight events, exactly e⁻¹);
+  the no-bootstrap control has 0.0% zeros; batches finite; `CARL_NUM_WORKERS=0` respected.
+- *Truth ratio*: E_bkg[r_true] = 1.000000 **by construction**, but the *independent* second constraint of
+  Ref. 17 Eq. (6) — E_sig[1/r_true], which is **not** enforced anywhere — comes out **0.989**, i.e. right to
+  1%. That is a real check that the matrix-element ratio is a genuine density ratio, not a normalisation
+  artefact. Physics sanity: median r_true rises 0.138 → 0.156 → 0.218 → 1.114 across m4ℓ quartiles — the
+  signal sits in the off-shell high-mass tail, as it must.
+
+**Condor note (cost us two resubmissions).** The first submission (cluster 5086708, 8 CPUs/job) matched
+**zero** slots: the Nikhef GPU nodes had free GPUs but **zero free CPUs**, and `condor_q -better-analyze`
+showed the "≥8 CPUs" and "≥1 GPU" conditions each matching 5 slots but never *the same* slot. 2 CPUs (cluster
+5086738) still did not match. **Cluster 5086805** = 1 CPU + `CARL_NUM_WORKERS=0` (the dataset is already an
+in-memory numpy array, so worker processes buy nothing and cost a core) — matched immediately, 5 running
+within minutes. GPU-node CPU contention, not a fault in the setup. Results and verdict to follow in the
+notebook.
 
 ### 2026-07-13 — item-7 message to Tei: DRAFT (Marta sends; parked while he is unresponsive)
 

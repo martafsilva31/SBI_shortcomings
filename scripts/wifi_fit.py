@@ -307,36 +307,44 @@ def main():
                         if not np.isfinite(v_mle):
                             continue
 
-                        s_mle, s_gs = np.sqrt(v_mle), np.sqrt(v_gs)
+                        # The Gong-Samaniego inflation is only DEFINED for the fitted-weight ratio:
+                        # C is the covariance of THOSE weights. A naive 1/M ensemble has no fitted
+                        # weights and hence no such covariance - a practitioner using it would quote
+                        # sigma_MLE, which is exactly the overconfidence the paper reports. The truth
+                        # ratio has no estimation uncertainty at all. So GS is wifi-only, by construction.
+                        s_mle = np.sqrt(v_mle)
+                        s_gs = np.sqrt(v_gs) if meth == "wifi" else np.nan
                         acc[meth]["khat"].append(k_hat)
                         acc[meth]["smle"].append(s_mle)
                         acc[meth]["sgs"].append(s_gs)
                         acc[meth]["bnd"] += int(at_bnd)
                         # 68% Wald intervals, as in the paper
                         acc[meth]["cov_mle"] += int(abs(k_hat - k_true) <= s_mle)
-                        acc[meth]["cov_gs"] += int(abs(k_hat - k_true) <= s_gs)
+                        if meth == "wifi":
+                            acc[meth]["cov_gs"] += int(abs(k_hat - k_true) <= s_gs)
 
                 for meth, a in acc.items():
                     n = len(a["khat"])
                     if n == 0:
                         continue
+                    is_wifi = (meth == "wifi")
                     row = {
                         "M": M, "kappa_true": k_true, "n_mix": n_mix, "method": meth,
                         "n_trials": n,
                         "coverage_mle": a["cov_mle"] / n,
-                        "coverage_gs": a["cov_gs"] / n,
+                        "coverage_gs": (a["cov_gs"] / n) if is_wifi else np.nan,
                         "coverage_err": float(np.sqrt(a["cov_mle"] / n * (1 - a["cov_mle"] / n) / n)),
                         "khat_mean": float(np.mean(a["khat"])),
                         "khat_std": float(np.std(a["khat"])),
                         "sigma_mle_mean": float(np.mean(a["smle"])),
-                        "sigma_gs_mean": float(np.mean(a["sgs"])),
-                        "inflation_mean": float(np.mean(np.array(a["sgs"]) / np.array(a["smle"]))),
+                        "sigma_gs_mean": float(np.mean(a["sgs"])) if is_wifi else np.nan,
+                        "inflation_mean": float(np.mean(np.array(a["sgs"]) / np.array(a["smle"]))) if is_wifi else np.nan,
                         "frac_at_boundary": a["bnd"] / n,
                     }
                     results["coverage"].append(row)
 
                 pr = {m: (acc[m]["cov_mle"] / max(len(acc[m]["khat"]), 1),
-                          acc[m]["cov_gs"] / max(len(acc[m]["khat"]), 1)) for m in acc}
+                          acc[m]["cov_gs"] / max(len(acc[m]["khat"]), 1)) for m in acc}  # gs meaningful for wifi only
                 print(f"  k={k_true:<5} N={n_mix:<6} "
                       f"truth {pr['truth'][0]:.3f} | naive {pr['naive'][0]:.3f} | "
                       f"wifi(MLE) {pr['wifi'][0]:.3f} -> wifi(GS) {pr['wifi'][1]:.3f}")
