@@ -132,6 +132,8 @@ Both analyses are extended-likelihood fits of the same μ (slide 3):
 **NSBI (as intended):** $\;\mathcal{L}(\mu) = \mathcal{P}\big(n \,\big|\, \nu(\mu)\big) \prod_{\rm events} \dfrac{p_{\rm SBI}(x_i|\mu)}{p_{\rm ref}(x_i)}$ — the per-event shape product, times one global Poisson rate term with $\nu(\mu) = \mathrm{lumi}\cdot(\mu\,\sigma_S + \sqrt{\mu}\,\sigma_I + \sigma_B)$. Dividing the shape product by $p_{\rm ref}$ is again harmless — it is μ-independent and drops out of $-2\Delta\ln L$. Slide 3's own emphasis: "the 'total rate' Poisson term, is not estimated using NNs" — it is analytic; the networks only ever supply shape information.
 
 > 🎯 **The rate term carries all the luminosity dependence.** The shape term gains information per event; the rate term gains information as $\nu(\mu)$ grows with luminosity, and it is exact (no NN approximation touches it). This is the natural reading of the founding evidence's convergence pattern — NSBI's Asimov-vs-median agreement is restored at 1000 fb⁻¹ "when the Poisson term takes over" (slide 7): as luminosity grows, an exact, well-behaved term increasingly dominates an approximate, badly behaved one. It is also why the missing-rate-term bug (§10) is more than a detail: the curves in the founding evidence are *pure shape*, i.e. pure NN.
+>
+> ⚠️ **Caveat found 2026-07-11 (Phase 3):** near the SM the rate term carries almost **no μ-information at first order** — the destructive interference makes $\nu_{\rm tot}(\mu)$ stationary at $\mu^* = (\sigma_I/2\sigma_S)^2 = 0.957$ ($d\nu/d\mu|_{\mu=1} = \sigma_S + \sigma_I/2 = 0.0067$ fb; the rate's share of the Fisher information at μ=1 is 0.0%). The rate constrains only the far tails, where $\nu(\mu)$ finally varies. The "takes over" reading therefore needs care near μ=1. Details: `notebooks/rate_degeneracy.ipynb`, `docs/phase3-fixes.md`.
 
 ---
 
@@ -142,6 +144,8 @@ The dataset is weighted (each simulated event carries a weight $w_i$ such that w
 For each toy, the full analysis (histogram or NSBI) produces a $-2\Delta\ln L$ scan over $\mu \in [0,4]$; the comparator is then the **pointwise-per-μ median** of the toy curves, with a ±1σ quantile band, overlaid on the Asimov curve.
 
 > ⚠️ **The definition must be owned precisely.** Slide 5 itself warns of a normalisation subtlety: "Here, the y-axis is not consistent between toys — some toy curves should go negative w.r.t. nominal Asimov curve." Whether each toy curve is minimum-subtracted (its own $\hat\mu$ as reference) or referenced to the nominal Asimov likelihood changes what "the median curve" means, materially, in exactly the low-statistics regime under study. Related: §3's theorem concerns the median of a *scalar statistic*; a pointwise median of *curves* is not the median of any single experiment's curve. The reproduction (Phase 1) must fix and document one convention before quantitative statements are made.
+
+> **Resolution 2026-07-13 (provisional).** The project adopts the **median of per-toy min-subtracted curves** (each toy referenced to its own $\hat\mu$ — the convention matching §3's scalar-statistic theorem) as the primary comparator; np.median of *raw* curves is reported alongside as an estimator-variance observation; torch.median is retired (it returns the lower middle element at even toy counts, biasing high-dimensional medians — measured decomposition: 0.44 torch-raw / 0.71 np-raw / 1.10 Δ for the 4D width ratio at 1000 fb⁻¹, `notebooks/bartlett_correction.ipynb`). ⚠ **Not yet discussed with the team** — ratification is part of the item-7 message to Tei (docs/plan.md).
 
 ---
 
@@ -225,6 +229,8 @@ so that $\mathbb{E}[t'_\mu] = n_d$ *by construction* (Ref. 9 Eq. 38). The non-tr
 - With 200 toys at ~6 events, $\hat{\mathbb{E}}[t_\mu]$ carries non-negligible sampling error of its own (and needs a convention for toys whose scan minimum escapes the μ window — the §8 curve-convention caveat propagates here).
 
 > 🎯 Mitigation #2 (§15) thus comes with a falsifiable protocol using only existing machinery: no new training, no new generator — one extra curve per panel.
+>
+> ⚠️ **Update 2026-07-11 (Phase 3 audit):** the model is **non-regular** at the SM point — the interference makes the total rate stationary at $\mu^* = 0.957$, first-order information largely vanishes, and $\hat\mu$ scales like $L^{-1/4}$ — so Bartlett's regular-model guarantees do not apply here. Empirically, thresholding at the toy mean still restored 68% coverage at 1000 fb⁻¹; treat that as a patch at one quantile, validated per level and per hypothesis in `notebooks/bartlett_correction.ipynb` (Phase-3 items 1–4), not as a theorem.
 
 ---
 

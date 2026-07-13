@@ -1,0 +1,21 @@
+# Deep-set prototype v0 (Phase-3 prong 3): one GPU job.
+universe                = vanilla
+executable              = /project/atlas/Users/mfernand/SBI_shortcomings/scripts/deepset_train.sh
+arguments               = v0 20000
+
++SingularityImage       = "/project/atlas/Users/mfernand/SBI_shortcomings/asimov-aymptotics-check/ml4fp-sbi-tutorial.sif"
++JobCategory            = "medium"
+
+request_gpus            = 1
+request_cpus            = 8
+request_memory          = 32G
+request_disk            = 8G
+
+log                     = /project/atlas/Users/mfernand/SBI_shortcomings/output/deepset/condor/v0.log
+output                  = /project/atlas/Users/mfernand/SBI_shortcomings/output/deepset/condor/v0.out
+error                   = /project/atlas/Users/mfernand/SBI_shortcomings/output/deepset/condor/v0.err
+
+should_transfer_files   = NO
+getenv                  = False
+
+queue
