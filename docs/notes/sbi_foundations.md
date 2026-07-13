@@ -290,9 +290,35 @@ Both pathologies then vanish, for structural reasons rather than by tuning:
 
 **Why this belongs in this note.** Two conditions of §7 are precisely what the FC ordering is built for. Condition (D) is sensitivity to the boundary $\mu \ge 0$, which at 1 fb⁻¹ with ≈ 5.7 expected events is live rather than academic: a toy's scan minimum can sit at or below zero, exactly where the Wald parabola is invalid and where classical intervals misbehave. And condition (A)'s rate fold makes the model locally two-to-one in $\mu$ near the SM point, so restricting the best fit to the physical region is doing real work rather than being a formality. FC is therefore not decoration on §17.6: it is the ordering that makes the toy-calibrated fallback usable at this luminosity, and, being a Neyman construction, it carries the guarantee of §6.2 — correct coverage whether or not any asymptotic condition holds.
 
-### 6.4 Coverage vs the Asimov check
+### 6.4 Coverage vs the Asimov check — two different questions
 
-The Asimov-vs-median comparison never looks at the truth: it compares two of the procedure's *own* sensitivity predictions against each other (expectation-level fit vs toy ensemble). A coverage measurement confronts intervals *with* the truth. They are different diagnostics probing the same underlying disease — a statistic whose sampling distribution is not what the analysis assumes — and they can disagree: a procedure can pass the Asimov check and still miscover, since nothing in "Asimov = median" pins the *absolute* scale of either. The two are independent, and both are run.
+Both diagnostics are aimed at the same underlying disease: a test statistic whose sampling distribution is not the one the analysis assumes. They are nevertheless *not* the same measurement, and neither implies the other. The cleanest way to see why is to lay out the chain that turns data into an error bar, because the two diagnostics cut it at different points.
+
+1. The analysis supplies a likelihood $\mathcal{L}(\mu)$ — the true one for a histogram, a learned approximation for NSBI (§7C).
+2. From it comes the statistic $t_\mu = -2\Delta\ln\mathcal{L}$, which has some sampling distribution $f(t_\mu \mid \mu)$ over repeated experiments.
+3. A **threshold** converts the statistic into an interval: report every $\mu$ with $t_\mu \le c$. Asymptotics assert $c = 1$ for 68 %, from the $\chi^2$ quantile that Wilks promises.
+4. The interval is the set that survives.
+
+**The Asimov check tests step 2, and only its median.** It asks whether the curve computed on the expectation-value dataset equals the pointwise median of the toy curves. That is a statement about the *median* of $f(t_\mu \mid \mu)$ as a function of $\mu$, and about nothing else. It never mentions a confidence level, never picks a threshold, and never asks where the truth ended up. Both objects being compared — the Asimov curve and the toy median — are produced by the analysis itself, under the same assumed $\mu'$.
+
+**Coverage tests steps 3–4 against reality.** It asks whether the interval, cut at the threshold the analysis actually uses, contains the true $\mu'$ as often as advertised. That is a statement about a *quantile* of $f(t_\mu \mid \mu)$ — whether its 68th percentile really sits at $c = 1$ — confronted with a truth that the Asimov check never invokes.
+
+So the two look at different features of the same distribution: **the Asimov check looks at its median; coverage looks at its $1-\alpha$ quantile against the assumed threshold.** A distribution can have the median it is supposed to have and the wrong 68th percentile, or the reverse. This also explains an asymmetry in what they report: coverage is level-dependent, so a procedure can cover at 68 % and miscover at 95 %, and coverage must therefore be mapped over levels as well as over $\mu'$ (§6.1); the Asimov property is a single curve comparison with no level in it at all.
+
+**The consequence that matters most here: the Asimov check is blind to any error the Asimov and the toys share.** The Asimov dataset and every toy are analysed with the *same* likelihood — for NSBI, the same frozen $\hat{r}$ (§7C). An error that distorts both in the same direction largely cancels in the difference between them. If a learned ratio systematically over-steepens the likelihood, the Asimov curve and the toy median can both be too steep, agree beautifully with each other, and every interval cut from them still be too short. The Asimov check would pass and the analysis would be overconfident. A coverage measurement cannot be fooled this way, because it does not compare the analysis with itself — it compares it with the truth.
+
+The reverse blindness is just as real. A toy-calibrated analysis (§6.2, §17.6) has correct coverage **by construction**, whatever the statistic does, because the thresholds are taken from the toys rather than from Wilks. Such an analysis can violate the Asimov property flagrantly and still cover exactly. Its published interval is valid; what is wrong is its *projected* sensitivity — the number quoted before the data are taken, and the one used to plan the experiment.
+
+The four cases, and what each would mean:
+
+| | Coverage correct | Coverage fails |
+|---|---|---|
+| **Asimov = median** | Asymptotics effectively hold. Nothing to fix. | Both curves are distorted *together* — a common-mode error in the shared likelihood, or a non-$\chi^2$ distribution whose median happens to be right. Expected sensitivity is quoted correctly; the error bar is not. **The Asimov check alone would have declared this analysis healthy.** |
+| **Asimov ≠ median** | The thresholds were calibrated with toys (Neyman/Feldman–Cousins), so validity is bought by construction. The measurement is sound; the Asimov *prediction* of sensitivity is not. | What this project appears to observe: the toy curves are steeper than the Asimov, so intervals cut at $\Delta = 1$ are too short and the procedure under-covers (§11). |
+
+Two practical differences follow. The Asimov check is the cheaper measurement — one Asimov fit and one toy ensemble at a single assumed $\mu'$ — while coverage needs toys at *many* true $\mu'$, an interval extracted per toy, and the whole thing repeated per confidence level. And their guarantees have different origins: coverage is what the Neyman construction delivers unconditionally (§6.2), whereas the Asimov property is guaranteed by nothing outside the Wald approximation (§5).
+
+Neither diagnostic subsumes the other, and each is blind exactly where the other sees. Both are run.
 
 ---
 

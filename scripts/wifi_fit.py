@@ -25,10 +25,18 @@ import os
 import pickle
 import sys
 
+_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+# physics/, models/, datasets/ are importable only from the sub-repo root (the training wrapper cds
+# into it; a script run from the container root must put it on the path itself).
+_SUB = os.path.join(_ROOT, "asimov-aymptotics-check")
+if os.path.isdir(_SUB) and _SUB not in sys.path:
+    sys.path.insert(0, _SUB)
+
 # LightningCLI-saved checkpoints need jsonargparse to deserialise, and it is NOT in the container
 # (same gap the path-B training hit). It lives in output/pyextra; put it on the path before importing
 # lightning, or CARL.load_from_checkpoint dies with a cryptic "object() takes no arguments".
-_PYEXTRA = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "output/pyextra")
+_PYEXTRA = os.path.join(_ROOT, "output/pyextra")
 if os.path.isdir(_PYEXTRA) and _PYEXTRA not in sys.path:
     sys.path.insert(0, _PYEXTRA)
 
@@ -165,12 +173,16 @@ def kappa_mle(r, lo=1e-6, hi=1.0 - 1e-6):
     if s_hi >= 0:                      # increasing everywhere -> MLE at 1
         return 1.0, True
 
-    for _ in range(200):               # score is strictly decreasing in k
+    # log L is concave in k, so the score is strictly decreasing: bisection is safe. 60 halvings of
+    # [0,1] reach ~1e-18, far below any scale that matters here (and this runs ~1e5 times).
+    for _ in range(60):
         mid = 0.5 * (lo + hi)
         if score(mid) > 0:
             lo = mid
         else:
             hi = mid
+        if hi - lo < 1e-10:
+            break
     return 0.5 * (lo + hi), False
 
 
