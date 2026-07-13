@@ -19,17 +19,51 @@
 ### Phase 2 — Dimensionality study
 
 - [x] Implement 1D–4D histogram analysis, 4 luminosities + fixed-16-bin control (2026-07-10):
-      notebooks/dimensionality_study.ipynb — headline: width ratio 1.08 (1D) → 0.44 (4D) at
-      1000 fb⁻¹, Asimov property breaks with cell count, no ML involved
+      notebooks/dimensionality_study.ipynb — headline REVISED 2026-07-11: the 0.44 (4D) ratio is
+      convention-dependent (0.44 torch-median-raw / 0.71 np-median-raw / 1.10 per-toy-Δ median — no
+      dimensionality effect under the Δ convention); convention DECIDED provisionally 2026-07-13
+      (Marta): Δ-primary + np-median-raw secondary, torch.median retired — ⚠ not yet team-ratified,
+      goes into the item-7 Tei message
 - [ ] Refine the occupancy metric (mean occupancy does not collapse the grid — distribution matters)
-- [ ] Toy-count scaling check (200 → 1000 toys) on the extreme points
+- [x] Toy-count scaling check (2026-07-11, via Phase-3 item 2 — and it exposed the convention issue)
 - [ ] NSBI overlay on the same panels (after path-B reproduction)
 
-### Phase 3 — Proposed fixes
+### Phase 3 — Proposed fixes (plan approved 2026-07-11; docs/phase3-fixes.md is the study note)
 
-- [ ] Add MC statistical uncertainties to both histogram and NSBI likelihoods
-- [ ] Investigate alternative test statistics (Bartlett correction or equivalent) for non-asymptotic regime
-- [ ] Prototype toy-ensemble training: train CARL NN on multiple pseudo-experiments (deep sets or equivalent) instead of single Asimov dataset
+M1 — Bartlett/coverage prong (notebooks/bartlett_correction.ipynb):
+- [x] 1. Coverage-vs-level curves on existing toys
+- [x] 2. 1000-toy sharpening (coverage + width-ratio error bars)
+- [x] 3. Multi-truth toy ensembles (μ_true grid incl. the fold μ*=0.957)
+- [x] 4. Proper per-hypothesis Bartlett intervals → prong-1 verdict
+
+M2 — rate-degeneracy mechanism (notebooks/rate_degeneracy.ipynb):
+- [x] 5. Per-bin fold characterisation + foundations addendum
+- [x] 6. κ=√μ reparametrisation check (LR-invariance demo + what changes)
+- [ ] 7. Tei message (Marta sends): fold mechanism + median-convention issue + ratification of the
+      provisional Δ-primary convention (adopted 2026-07-13)
+
+M3 — prong-2 gate:
+- [x] 8. MC-stat relevance per config (dimensionality notebook §10) → BB-lite go/no-go (Marta)
+      → DECIDED 2026-07-13 (Marta): MC-stat uncertainties go in, in every scenario
+- [ ] 8a. BB-lite closed-form profiling in stats/binned.py (sub-repo; approved 2026-07-13)
+- [ ] 8b. BB-lite overlay in the dimensionality notebook (μ̂ + Δ-convention width ratios, 32 points)
+- [ ] 8c. BB-lite coverage spot-check (bartlett notebook, 1D/4D @ 100/1000 fb⁻¹)
+- [ ] 8d. NSBI MC-stat treatment — design note (gated on path A)
+
+M4 — prong-3 deep-set prototype:
+- [x] 9. Design note (files named for approval) — docs/phase3-fixes.md §prong-3
+- [x] 10. Generator + training script (2026-07-12; smoke-tested)
+- [x] 11. Condor GPU training (2026-07-12: full 20k steps, best val_loss 0.0249)
+- [x] 12. Coverage evaluation (2026-07-12): v0 fails coverage (prior-dominated at low L, fold bias
+      at high L) BUT learns L-aware sigma
+- [x] 12b. v1 Neyman calibration (approved + done 2026-07-12): notebooks/deepset_neyman.ipynb —
+      no under-coverage anywhere (0.67–0.87), exact at the informative points, honest widths
+      (full-range at 1 fb⁻¹, 0.9 at 1000 fb⁻¹). Prong 3 closed with a working mitigation.
+
+Blocked / closure:
+- [ ] 13. NSBI coverage+Bartlett audit on path A (blocked on Tei)
+- [ ] 14. Re-execute all Phase-3 notebooks end-to-end (validation)
+- [ ] 15. Logbook entries + commits (gated on Notion auth + format sign-off)
 
 ### Phase 4 — Dataset extension (coordinate with Lydia)
 

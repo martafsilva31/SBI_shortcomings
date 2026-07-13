@@ -13,10 +13,17 @@
 
 Full metrics table + figures in the notebook; scan tensors under `output/dim/`. Headlines:
 
-1. **The Asimov property breaks in a plain histogram once it has enough cells — no ML involved.**
-   At 1000 fb⁻¹ (5656 expected events) the width ratio median(toys)/Asimov falls from **1.08 (1D,
-   10 bins) to 0.44 (4D, 10⁴ bins)** — same direction as the NSBI failure (toys narrower =
-   overconfidence). The NSBI's measured 0.874 at 300 fb⁻¹ sits in the range of a 2D–3D histogram.
+1. **Convention ADOPTED 2026-07-13 (⚠ provisional — not yet discussed with team/Tei; ratification
+   goes into the Tei message, plan item 7): primary comparator = median of per-toy min-subtracted
+   (Δ) curves; np.median of raw curves reported alongside as an estimator-variance observation;
+   torch.median retired (lower-middle-element bias at even toy counts).** Under the primary (Δ)
+   convention the 4D@1000 fb⁻¹ width ratio is **1.10 — no dimensionality effect in the width
+   ratio**; the occupancy story is carried by the convention-free coverage analysis
+   (bartlett_correction.ipynb), which shows the real high-L pathology is the interference rate
+   fold, not occupancy. History (REVISED 2026-07-11, Phase-3 items 2/4): first reported as 0.44
+   under Tei's convention (torch.median of raw curves); decomposition on identical tensors: 0.44
+   (torch-median raw) / 0.71 (np-median raw) / 1.10 (per-toy Δ). Tei's NSBI direction check
+   (0.87 @300 fb⁻¹) is robust under all conventions (foundations §8).
 2. **Mean occupancy alone does not collapse the effect**: at fixed mean occupancy the
    higher-d/higher-L point is consistently worse (occ 0.57: 0.71 @ 3D/100 fb⁻¹ vs 0.44 @
    4D/1000 fb⁻¹). The steep m4ℓ spectrum makes the occupancy *distribution* (many near-empty
