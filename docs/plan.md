@@ -64,16 +64,19 @@ M3 — prong-2 gate:
       wᵢ, analytic sandwich covariance → Gong–Samaniego inflation of σ²_μ; no bootstraps). Written up
       as Ref. 17 (literature.md) + foundations §15.1; PDF in docs/refs/. ⚠ Its guarantees are
       **asymptotic** — a candidate mitigation to be *tested*, not assumed, in our regime
-- [ ] 8d. NSBI MC-stat treatment — design note. **Method side now settled** (template = BB-lite;
-      network = wifi, item 8c-bis); *execution* still gated on path A (wifi needs M working basis
-      networks; our path-B r_sbi/bkg never left the ln2 floor)
-- [~] 8e. **wifi prototype on `sig_over_bkg` — APPROVED 2026-07-13, in flight.** Asks foundations
-      §17.3's question (does an asymptotically-derived inflation restore coverage where asymptotics
-      fail?) on the mixture fraction κ — Ref. 17's own task — with a **truth-ratio control** from the
-      per-event matrix elements that the paper could not build. Engine + closure test DONE (w*
-      recovered, C ~ O(1/N) verified); `Process.resample()` implemented (the sub-repo's own wifi TODO
-      stub); M=16 basis trainings submitted (condor 5086738, idle — GPU nodes have zero free CPUs).
-      Files: scripts/wifi_train_basis.{sh,sub}, scripts/wifi_fit.py, notebooks/wifi_ensembles.ipynb
+- [ ] 8d. NSBI MC-stat treatment — design note. **Method side settled and now validated end-to-end**
+      (template = BB-lite; network = wifi + f₀, prototyped in 8e); *execution* still gated on path A
+      (needs Tei's working r_sbi/bkg basis; our path-B never left the ln2 floor)
+- [x] 8e. **wifi prototype on `sig_over_bkg` — DONE 2026-07-14.** §17.3 answered: the GS inflation
+      scales as N_mix/N_fit (measured 1.0001→1.037) — structurally invisible in the non-asymptotic
+      regime whenever the ratio trains on more events than the measurement uses; **hypothesis 3
+      survives its strongest challenger**. With Ref. 17's f₀=1 basis term — omitted in run 1, caught
+      by a 23-agent adversarial engine review; run-1's "wifi collapses" (0.35–0.59 at N=10⁴) was a
+      protocol artefact — wifi+GS coverage is nominal at all N_mix (0.64–0.72 at N=10⁴, ±0.021),
+      κ̂ bias +0.001…+0.003 ≈ truth control; the naive ensemble still collapses (0.28–0.63), exactly
+      as the paper warns. wifi enters 8d as MC-stat *propagation*, not as an Asimov-failure
+      mitigation. Basis: 16/16 nets (condor 5086805, true val_loss 0.41928–0.42331). Study note:
+      phase3-fixes.md §2026-07-14; verdict: notebooks/wifi_ensembles.ipynb §7
 
 M4 — prong-3 deep-set prototype:
 - [x] 9. Design note (files named for approval) — docs/phase3-fixes.md §prong-3

@@ -299,3 +299,64 @@ honest: ≈ full μ-range at 1 fb⁻¹ (6 events genuinely tell you nothing), �
 **Recipe for the write-up: learned L-aware summary statistic + classical toy-based calibration —
 immune by construction to both failure mechanisms (cell count/convention, interference fold).**
 Prong 3 closed.
+
+### 2026-07-14 — item 8e RESULTS: the wifi verdict (after an f₀ protocol fix caught by review)
+
+**Basis training landed overnight.** Cluster 5086805 (the 1-CPU resubmit): 16/16 jobs exit 0 by 04:22.
+True best val_loss per member (read from the ModelCheckpoint callback state — the 2-dp filenames all say
+"0.42") spans **0.41928–0.42331** (ln 2 = 0.693): every member learned, and the spread is real (best epochs
+range 15–199 despite the shared init — the bootstrap alone diversifies the trainings). Median per-event
+basis spread 0.170 in log-ratio units.
+
+**Run 1 (no f₀) and the review that killed its headline.** The first full fit (~5 min CPU on stbc-i2;
+E_bkg[r_true] = 1.000000, saturation 0.000%, Newton 3–7 iterations) showed wifi coverage collapsing to
+**0.35–0.59 at N_mix = 10⁴** with GS inflation ≤ 1.024 — one section away from a "bias dominates, wifi
+fails" write-up. A 23-agent adversarial review of the engine (lanes: paper-math, statistical design, output
+contract; each finding attacked by two independent refuters) confirmed three defects first:
+
+1. **[major] Missing f₀(x) = 1.** Ref. 17 Sec. III.A includes the constant basis function in *all* wifi
+   experiments — its weight w₀ is what lets the fitted ratio satisfy the Eq. (6) normalisation. Our engine
+   fitted only the M logits (the constant is not in their span: R² = 0.22), so a common normalisation offset
+   of the basis (measured: E_d[e^u] = 0.994 vs E_n[e^−u] = 1.013) survived as an unabsorbable κ bias.
+2. **[major] The notebook's GS-scaling narrative was backwards.** σ²_MLE·ACA ~ N_mix/N_fit **grows** with
+   N_mix (A is a sum over trial events); "inflation largest at small N" contradicted the engine's own
+   output. Corrected in notebook §6 and promoted to the structural half of the verdict.
+3. **[minor] Filename-parsed val_losses in notebook §2** (all quantized to "0.42"); the engine now exports
+   the true scores (`member_val_loss` in the results JSON).
+
+Ten further attacks were refuted **with measurements**: shared-200k-pool trial correlation ≤ 1.7 pp,
+common-mode incl. the truth row; frozen-ŵ/C conditional coverage second-order (≤ few pp, N = 10⁴ only —
+the paper refits per trial, we do not); source-ESS effect on C; the shared init seed (bootstrap diversity
+is real). Equation-level fidelity of loss/scores/Hessian/sandwich/κ-MLE/GS to the paper: clean.
+
+**Run 2 (with f₀): run 1's collapse was the protocol deviation, not wifi.** w₀ = +0.039…+0.043 across
+M ∈ {4, 8, 16}; Eq. (6) stationarity exact (E_n[e^−u] = E_d[e^u] = 0.998–0.999). At N_mix = 10⁴, wifi(GS)
+coverage is **0.64–0.72 across all κ and M** (nominal 0.683, MC error ±0.021) vs 0.35–0.59 in run 1;
+κ̂ bias **+0.001…+0.003** (was −0.005…−0.007), compatible with the truth control (±0.002). The RMS
+log-ratio error is **unchanged** (0.352 ≈ 15× the propagated noise 0.023): f₀ removed only the
+normalisation component of the bias — precisely the component κ inference feels. The **naive ensemble**
+(uniform weights, no f₀ — the paper's own Naive protocol) still collapses: 0.28–0.63 at N = 10⁴,
+κ̂ bias −0.011 at κ = 0.5. Ref. 17's central claim, confirmed on physics data.
+
+**Verdict (answers foundations §17.3).**
+- **Structurally: GS cannot act at small N_mix.** Relative inflation ~ N_mix/N_fit — measured 1.0001 at
+  N = 30, max 1.037 at N = 10⁴. Whenever the ratio is fitted on more events than the measurement uses —
+  the universal NSBI situation — the inflation is invisible in the non-asymptotic regime *by construction*.
+  **Hypothesis 3 (sample-size blindness) survives its strongest challenger.**
+- **Empirically: on this rate-style task there was nothing at small N to fix** (truth-ratio coverage nominal
+  at every N_mix; the κ = 0.05/N = 30 overcoverage is the Wald-at-boundary artefact — ~⅓ of fits pinned at
+  κ̂ = 0 — common to all methods).
+- **wifi + f₀ is validated as MC-stat *propagation*** on a ratio that trains: honest sandwich covariance,
+  load-bearing Eq. (6). It enters the 8d design as the network-side treatment — but it is not, and cannot
+  be, a mitigation of the Asimov ≠ median(toys) failure.
+- Lessons: Eq. (6)/f₀ is not a convenience; and pointwise ratio bias ≠ parameter bias — what matters is the
+  projection of the ratio error onto the parameter's score.
+
+**Files.** Engine `scripts/wifi_fit.py` (f₀ basis, Eq. (6) printout, val_loss export); results
+`output/wifi/results/{wifi_results.json, coverage.csv, diagnostics.npz, fit.log}` (run 2; run 1's log
+preserved as `fit_run1_no_f0.log`); narrative `notebooks/wifi_ensembles.ipynb` (fully executed, 5 figures,
+§7 verdict).
+
+⚠ **For the item-7 Tei message:** §3 can be upgraded from "found it, just confirming" to *validated on our
+data* (κ-mixture task; coverage nominal once the paper's f₀ term is included) — one-line addendum available
+when Marta sends it.

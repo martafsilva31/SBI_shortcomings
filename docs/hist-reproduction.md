@@ -128,10 +128,136 @@ min-subtracted; widths from Δ = 1 crossings; maxdiff = max |A − M| over the f
   per-lumi notebook copies under `output/hist/` were removed; the `.pt` triples remain (the notebook
   regenerates them). Numbers identical to the first pass (μ̂ = 1.000 ∀L; ratios 0.985 / 1.054).
 
-### Open follow-ups
+### 2026-07-13 — notebook review (Marta): band convention, and the Δ-median pedestal
 
+Marta reviewed `notebooks/histogram_reproduction.ipynb` and raised three things. All three were real;
+the physics conclusion is unchanged, but the way it was being plotted and scored was not defensible.
+
+**1. Our plot did not look like Tei's because the band is a different statistic.** His slide 6 (titled
+"NSBI" but the bullet underneath says "For histogram analysis…") builds the band from the **raw** toy
+curves shifted by one common constant, so it goes *negative* — his slide-5 caveat says exactly this
+("the y-axis is not consistent between toys; some toy curves should go negative w.r.t. the nominal
+Asimov curve"). Ours was built from **per-toy min-subtracted** curves, which are ≥ 0 by construction.
+Measured on our own scans at 1 fb⁻¹: Tei's convention spans −2.74 … +4.49, ours 0.00 … +0.81 — and
+`set_ylim(bottom=0)` was hiding the difference. His slide-6 panel spans ≈ −2.5 … +5.5, so the
+common-offset convention reproduces it and per-toy Δ cannot.
+
+**2. "toys 16–84%" vs "±1σ quantile" is only a label — but it exposed a real bug.** 16–84% *is* the
+±1σ quantile. The bug behind the question: the **band and the median line were computed from different
+quantities** — band from the per-toy Δ curves, line from `torch.median` of the *raw* curves. So the
+plotted line was not the 50% quantile of the family the band bracketed, and it fell **outside its own
+band at 13% of the μ points at 1 fb⁻¹** (18% at 10 fb⁻¹). Tei's version never had this problem:
+subtracting one common constant commutes with taking quantiles, so his band and line are one statistic.
+`torch.median` was also still in use here despite being retired on 2026-07-13 (lower-middle-element
+bias at even toy counts).
+
+**3. ⚠ The Δ-median curve has a pedestal and can never lie on the Asimov curve.** This is the
+substantive finding of the review. Min-subtraction is a **per-toy** operation — each toy is shifted by
+*its own* minimum, a different random amount — so it does not commute with the median, and the result is
+not a likelihood curve. At μ = μ_true every toy has Δᵢ ≥ 0, with equality only if that toy's μ̂ᵢ landed
+*exactly* on the truth, which none do; hence med(Δ) > 0 strictly while the Asimov curve is 0 there by
+definition. **A quantity that is positive for every toy cannot have a median of zero.** This is an
+inequality — it needs no asymptotics and no model, and it is what makes the convention split below robust.
+
+**How big is the pedestal — and a ⚠ correction to the first draft of this entry.** *Asymptotically*
+(μ̂ ~ N(μ_true, σ), parabolic curves) Δᵢ(μ_true) ~ χ²₁, so the pedestal would be med(χ²₁) = 0.455,
+**flat in luminosity**. The measured `ped(D)` does **not** do that:
+
+| | 1 fb⁻¹ | 10 fb⁻¹ | 100 fb⁻¹ | 1000 fb⁻¹ | asymptotic |
+|---|---|---|---|---|---|
+| `ped(D)` | 0.027 | 0.145 | 0.458 | 0.662 | 0.455 (flat) |
+| `ratio(D)` | — | — | 0.990 | 1.052 | 1.185 |
+
+It rises monotonically and overshoots — so the 0.458 at 100 fb⁻¹ is a curve crossing 0.455 **on its way
+up, not converging to it**. The first draft of this entry reported that agreement as a ✓ confirmation of
+the asymptotic prediction; **that was wrong and is retracted.** The width says the same: a direct
+simulation of ideal parabolic toys gives pedestal 0.457 ✓ (so the analytics are right) but width ratio
+**1.185** — the Δ-median curve *should* be 18% wider than the Asimov. We measure 0.99–1.05. **Neither
+asymptotic prediction is reproduced at any luminosity we test, 1000 fb⁻¹ included.**
+
+That is not a bug — it is the project's thesis appearing in its own control channel: these toys are not
+asymptotic, and §10 of the notebook says why (the μ̂ distribution is bimodal, sitting on the two fold
+branches, not Gaussian). **⚠ Open, not explained:** why `ratio(D)` lands at ~1 instead of the asymptotic
+1.185. Do not quote 0.455 as a validated prediction of this analysis.
+
+> **Consequence for the adopted convention.** The Δ convention (adopted 2026-07-13,
+> `docs/dimensionality-study.md`) is correct for **widths** — it is what an experiment quotes — but it
+> is the **wrong comparator for the "Asimov = median" overlay**, which can only be read in Tei's
+> common-offset convention. The 2026-07-13 decision did not draw this distinction. **This goes in the
+> Tei message (plan item 7) alongside the median-convention issue already drafted there.**
+
+**Fixes applied to the notebook** (engine untouched; μ grid deliberately left at Tei's committed [0, 4]):
+
+- §6 is now a 2×4 figure: row 1 = per-toy Δ (project convention), row 2 = common offset (reproduces
+  slide 6). In both rows the median line is the 50% quantile of the curves the band brackets. `np.median`
+  throughout; no `set_ylim`, so row 2's band is free to go negative.
+- §8 summary table rebuilt: "1σ half-widths" → **full** 68% interval width (the prose was simply wrong —
+  the code always computed `hi − lo`); width ratio now carries a **bootstrap error bar**; ratio reported
+  under both conventions; new `ped(D)` column measuring the pedestal; `max|A−M|` measured after removing
+  it, so it is the metric that carries the 1–10 fb⁻¹ points where the widths are `nan`.
+
+**Results after the fix** (200 toys, seed 42, μ ∈ [0, 4]):
+
+| lumi [fb⁻¹] | μ̂_A | med(μ̂_toy) | width_A | ratio(Δ) | ratio(raw) | ped(Δ) | max\|A−M\| |
+|---|---|---|---|---|---|---|---|
+| 1 | 1.000 | 0.680 | — (open) | — | — | 0.027 | 0.312 |
+| 10 | 1.000 | 0.740 | — (open) | — | — | 0.145 | 0.317 |
+| 100 | 1.000 | 0.640 | 1.805 | **0.990 ± 0.051** | 0.986 | 0.458 | 0.868 |
+| 1000 | 1.000 | 0.920 | 0.805 | **1.052 ± 0.067** | 1.052 | 0.662 | 0.991 |
+
+- **Both width ratios are consistent with 1 within their MC error** — the first time this could be said
+  at all. The old bare 0.985 / 1.054 had no error bar and could not be judged against toy noise.
+  Conclusion (histogram satisfies Asimov ≈ median at all four luminosities) **stands**.
+- Small shifts vs the 2026-07-10 table (0.985 → 0.986, 1.054 → 1.052) are the `torch.median` →
+  `np.median` change, as expected.
+
+**⚠ Flagged, not resolved — the toy μ̂ distribution is not centred on 1.** med(μ̂_toy) = 0.64 at
+100 fb⁻¹ because **54 of the 200 toys (27%) minimise at or near the μ = 0 boundary**; the distribution is
+strongly skewed (quartiles 0.20 / 0.64 / 1.36), not Gaussian. This looks like the rate fold already
+characterised in `notebooks/rate_degeneracy.ipynb` and blamed for the under-coverage in
+`notebooks/bartlett_correction.ipynb`. It does not undermine the curve-level Asimov agreement (which is
+what the property is about) but it **should be reconciled against those two notebooks** rather than taken
+at face value from this table. *(Resolved the next day — see below.)*
+
+### 2026-07-14 — reconciliation: the pile-up is the fold's unresolved lower branch (notebook §10)
+
+The flag above is **resolved**; the analysis lives in `notebooks/histogram_reproduction.ipynb` §10
+(new stats cell + two figures, computed from the §5 scans plus the seed-42 μ ∈ [0,8] dimensionality
+tensors). What was established:
+
+- **First, the definitions the flag glossed over.** "27% at or near μ = 0" = μ̂ ≤ 0.24; exactly *at*
+  the boundary is only 7.5%, μ̂ ≤ 0.08 is 18.5%. The criterion matters because the mechanism puts the
+  toys *near* zero, not at it.
+- **Grid- and binning-independent.** The same seed-42 toys on the μ ∈ [0,8] grid with two independent
+  binnings (`occ_1d`, `ctl_1d`) give med(μ̂) = 0.65/0.70 and 24.5–25.5% ≤ 0.24 at 100 fb⁻¹, nothing at
+  μ ≥ 4. Physics against the physical μ ≥ 0 floor, not the [0,4] window. (The 1 fb⁻¹ pile-ups are a
+  different, flat-likelihood effect: median curve depth NLL(1)−NLL(min) = 0.06, noise minima on *both*
+  edges — 26% at μ = 4.)
+- **It is the fold, and the attractor is the *shape-weighted* fold pair.** W-shaped toys (two local
+  minima: 0% → 7% → 22% → 31% for L = 1 → 1000 fb⁻¹) have branches at 0.076 ± 0.066 / 1.65 ± 0.32
+  (100 fb⁻¹) and 0.175 ± 0.069 / 1.28 ± 0.20 (1000 fb⁻¹), mirror-symmetric in κ = √μ about
+  κ_v = 0.768 at both luminosities → an **effective fold at μ_eff = κ_v² ≈ 0.59**, well below the
+  total-rate fold μ* = 0.957. This
+  is where the per-bin folds of this very axis point: the information-carrying high-mass bins fold at
+  μ*_b = 0.46–0.68 (`rate_degeneracy`; Fisher-weighted vertex κ ≈ 0.87), while the 0.957 total-rate
+  figure is dominated by low-mass bins with no shape information. "μ̂ attracted toward μ*" (bartlett)
+  refines to "attracted toward the effective fold pair of the full likelihood".
+- **100 → 1000 fb⁻¹ is branch resolution, not disappearance.** At 100 the lower branch (0.08 ± 0.07)
+  is pressed against zero → the 27%. At 1000 it detaches (0.18 ± 0.07), the boundary empties, ~13% of
+  toys (μ̂ ≤ 0.24) sit on the resolved branch: bimodal, left-skewed, med 0.92, mean 0.859 — **identical to
+  `bartlett_correction`'s 0.859 ± 0.417 on the same tensors**, and consistent with `rate_degeneracy`'s
+  L^(−1/4) and 0.86-bias narrative. Neither notebook had measured a median, quartile, or boundary
+  fraction, so nothing was ever in contradiction — the flag added a new statistic to a known mechanism.
+- **Consequences.** The §8 med(mu_toy) column is fold-shaped, not a calibration bias; the curve-level
+  Asimov ≈ median conclusion is untouched; the bartlett coverage dip at μ_true ∈ {0.957, 1} is the same
+  lower branch escaping the Δ = 1 interval. Nothing new to fix (κ = √μ provably cannot remove the fold;
+  the working mitigation remains prong 3's Neyman construction).
+
+### Open follow-ups
+- **Convention split (overlay vs width) into the Tei message** (new, 2026-07-13 — plan item 7).
 - μ scan window [0, 4] too narrow to contain 1σ intervals at 1–10 fb⁻¹ — if we want closed
-  histogram intervals there, extend the grid in a future run (deliberate deviation, needs approval).
+  histogram intervals there, extend the grid in a future run (deliberate deviation, needs approval;
+  Marta declined the widening on 2026-07-13 to keep the byte-for-byte reproduction of Tei's setup).
 - NSBI direction check is single-lumi (300 fb⁻¹); low-lumi NSBI points come with path A/B.
 - Proposed (not applied): fix inverted direction sentence in project `CLAUDE.md`; add
   `PYTHONNOUSERSITE=1` to setup.sh instructions; clean corrupt `~/.local` site-packages.

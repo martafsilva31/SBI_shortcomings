@@ -18,6 +18,8 @@ Equations follow the paper:
   (11)/(18) C = V^-1 U V^-1,  U = Cov_n[a]/N_n + Cov_d[b]/N_d  (sandwich)
   (27)     mixture likelihood  log L(x|k) = log(k r(x) + (1-k))
   (22-24)  sigma_GS^2 = sigma_MLE^2 (1 + sigma_MLE^2 A_i C_ij A_j),  A_i = d2 logL / dk dw_i
+  (Sec. III.A) the wifi basis includes the constant f_0(x) = 1 in all experiments; its weight w_0
+           lets the fit satisfy the Eq. (6) normalisation. Index 0 of w_hat/C is w_0 throughout.
 """
 import argparse
 import json
@@ -81,7 +83,8 @@ def load_member(member_dir):
                     return float(score)
         return float("inf")
 
-    best = min(ckpts, key=val_score)
+    scores = {f: val_score(f) for f in ckpts}
+    best = min(scores, key=scores.get)
 
     model = CARL.load_from_checkpoint(os.path.join(ckpt_dir, best), map_location="cpu")
     model.eval()
@@ -89,7 +92,7 @@ def load_member(member_dir):
     with open(os.path.join(member_dir, "scaler.pkl"), "rb") as fh:
         scaler = pickle.load(fh)
 
-    return model, scaler, os.path.join(ckpt_dir, best)
+    return model, scaler, os.path.join(ckpt_dir, best), scores[best]
 
 
 def basis_logits(models_scalers, X):
@@ -105,6 +108,13 @@ def basis_logits(models_scalers, X):
 
 
 # ---------------------------------------------------------------- wifi weight fit
+
+def with_f0(F):
+    """Basis with the paper's constant f_0(x) = 1 prepended (Sec. III.A): w_0 lets the fit satisfy
+    the Eq. (6) normalisation of the ratio. Column 0 of the fitted w and of C is w_0. The naive
+    1/M ensemble deliberately has no f_0 (the paper fixes its w_0 = 0)."""
+    return np.hstack([np.ones((len(F), 1), dtype=np.float64), F])
+
 
 def sym_mlc_loss(w, f_n, f_d):
     u_n = np.clip(f_n @ w, -U_CLIP, U_CLIP)
@@ -128,10 +138,10 @@ def sym_mlc_grad_hess(w, f_n, f_d):
     return grad, V, a, b
 
 
-def fit_weights(f_n, f_d, max_iter=100, tol=1e-10, verbose=False):
-    """Newton's method on the convex symmetrized MLC loss. Start from the naive ensemble w=1/M."""
+def fit_weights(f_n, f_d, w_init=None, max_iter=100, tol=1e-10, verbose=False):
+    """Newton's method on the convex symmetrized MLC loss. Default start: the naive ensemble w=1/M."""
     M = f_n.shape[1]
-    w = np.full(M, 1.0 / M)
+    w = np.full(M, 1.0 / M) if w_init is None else np.asarray(w_init, dtype=np.float64).copy()
 
     for it in range(max_iter):
         grad, V, _, _ = sym_mlc_grad_hess(w, f_n, f_d)
@@ -237,12 +247,13 @@ def main():
         raise SystemExit(f"need >= {M_max} members, found {len(member_dirs)} in {args.run_dir}")
     member_dirs = member_dirs[:M_max]
 
-    models_scalers, ckpts = [], []
+    models_scalers, ckpts, member_val_loss = [], [], []
     for d in member_dirs:
-        model, scaler, ckpt = load_member(d)
+        model, scaler, ckpt, vloss = load_member(d)
         models_scalers.append((model, scaler))
         ckpts.append(ckpt)
-        print(f"loaded {os.path.basename(d)}: {os.path.basename(ckpt)}")
+        member_val_loss.append(vloss)
+        print(f"loaded {os.path.basename(d)}: {os.path.basename(ckpt)}  val_loss={vloss:.5f}")
     print(f"{len(models_scalers)} basis networks loaded")
 
     # ---- data: the TEST split only (disjoint from what trained f_i and from validation)
@@ -296,7 +307,7 @@ def main():
     print(f"basis saturation: {100*sat:.3f}% of |f_i(x)| > 13 on D_fit  (must be tiny)")
     results_saturation = float(sat)
 
-    results = {"config": vars(args), "checkpoints": ckpts,
+    results = {"config": vars(args), "checkpoints": ckpts, "member_val_loss": member_val_loss,
                "truth_norm": norm, "closure_E_bkg_r_true": float(np.mean(r_true_bkg_pool)),
                "closure_E_sig_inv_r_true": float(np.mean(1.0 / np.maximum(r_true_sig_pool, 1e-300))),
                "basis_saturation_frac": results_saturation,
@@ -304,27 +315,36 @@ def main():
 
     for M in args.members:
         print(f"\n=== M = {M} ===")
-        fn, fd = f_fit_n[:, :M], f_fit_d[:, :M]
+        fn_raw, fd_raw = f_fit_n[:, :M], f_fit_d[:, :M]
+        fn, fd = with_f0(fn_raw), with_f0(fd_raw)          # wifi basis: [1, f_1..f_M]
+        w_naive = np.full(M, 1.0 / M)                      # naive stays M-only (w_0 = 0)
 
-        w_hat = fit_weights(fn, fd, verbose=True)
+        w_hat = fit_weights(fn, fd, w_init=np.r_[0.0, np.full(M, 1.0 / M)], verbose=True)
         C, V, U = weight_covariance(w_hat, fn, fd)
-        w_naive = np.full(M, 1.0 / M)
 
-        print(f"  w_hat      = {np.array2string(w_hat, precision=3)}  (sum {w_hat.sum():.3f})")
+        u_n = np.clip(fn @ w_hat, -U_CLIP, U_CLIP)
+        u_d = np.clip(fd @ w_hat, -U_CLIP, U_CLIP)
+        eq6_n, eq6_d = float(np.mean(np.exp(-u_n))), float(np.mean(np.exp(u_d)))
+
+        print(f"  w_0        = {w_hat[0]:+.4f}  (Eq. 6 normalisation weight)")
+        print(f"  w_hat[1:]  = {np.array2string(w_hat[1:], precision=3)}  (sum {w_hat[1:].sum():.3f})")
         print(f"  sigma(w)   = {np.array2string(np.sqrt(np.diag(C)), precision=3)}")
-        print(f"  loss: naive {sym_mlc_loss(w_naive, fn, fd):.6f} -> wifi {sym_mlc_loss(w_hat, fn, fd):.6f}")
+        print(f"  Eq.(6): E_n[e^-u] = {eq6_n:.4f}  E_d[e^u] = {eq6_d:.4f}  (w_0 stationarity => equal)")
+        print(f"  loss: naive {sym_mlc_loss(w_naive, fn_raw, fd_raw):.6f} -> wifi {sym_mlc_loss(w_hat, fn, fd):.6f}")
 
         results["ensembles"][str(M)] = {
             "w_hat": w_hat.tolist(), "C": C.tolist(),
             "sigma_w": np.sqrt(np.diag(C)).tolist(),
-            "loss_naive": sym_mlc_loss(w_naive, fn, fd),
+            "w0": float(w_hat[0]), "eq6_n": eq6_n, "eq6_d": eq6_d,
+            "loss_naive": sym_mlc_loss(w_naive, fn_raw, fd_raw),
             "loss_wifi": sym_mlc_loss(w_hat, fn, fd),
         }
 
         # log-ratio estimates on the experiment pool, for each estimator of r
+        fpn, fpd = with_f0(f_pool_n[:, :M]), with_f0(f_pool_d[:, :M])
         r_pool = {
-            "wifi":  (np.exp(np.clip(f_pool_n[:, :M] @ w_hat, -U_CLIP, U_CLIP)),
-                      np.exp(np.clip(f_pool_d[:, :M] @ w_hat, -U_CLIP, U_CLIP))),
+            "wifi":  (np.exp(np.clip(fpn @ w_hat, -U_CLIP, U_CLIP)),
+                      np.exp(np.clip(fpd @ w_hat, -U_CLIP, U_CLIP))),
             "naive": (np.exp(np.clip(f_pool_n[:, :M] @ w_naive, -U_CLIP, U_CLIP)),
                       np.exp(np.clip(f_pool_d[:, :M] @ w_naive, -U_CLIP, U_CLIP))),
             "truth": (r_true_sig_pool, r_true_bkg_pool),
@@ -344,7 +364,7 @@ def main():
                         r = np.concatenate([rs[idx_s], rb[idx_b]])
                         k_hat, at_bnd = kappa_mle(r)
 
-                        f_trial = np.concatenate([f_pool_n[idx_s, :M], f_pool_d[idx_b, :M]])
+                        f_trial = np.concatenate([fpn[idx_s], fpd[idx_b]])   # augmented rows: [1, f_1..f_M]
                         v_mle, v_gs, _ = kappa_uncertainties(k_hat, r, f_trial, C)
                         if not np.isfinite(v_mle):
                             continue
@@ -403,7 +423,7 @@ def main():
         M_ref=M_ref,
         f_pool_n=f_pool_n[sl, :M_ref], f_pool_d=f_pool_d[sl, :M_ref],
         r_true_n=r_true_sig_pool[sl], r_true_d=r_true_bkg_pool[sl],
-        logr_wifi_n=f_pool_n[sl, :M_ref] @ w_ref, logr_wifi_d=f_pool_d[sl, :M_ref] @ w_ref,
+        logr_wifi_n=with_f0(f_pool_n[sl, :M_ref]) @ w_ref, logr_wifi_d=with_f0(f_pool_d[sl, :M_ref]) @ w_ref,
         logr_naive_n=f_pool_n[sl, :M_ref].mean(axis=1), logr_naive_d=f_pool_d[sl, :M_ref].mean(axis=1),
         m4l_n=sig_pool.kinematics["4l_mass"].to_numpy()[sl],
         m4l_d=bkg_pool.kinematics["4l_mass"].to_numpy()[sl],
