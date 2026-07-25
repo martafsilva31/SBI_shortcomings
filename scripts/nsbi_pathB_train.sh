@@ -2,7 +2,7 @@
 # CARL path-B training wrapper (HTCondor GPU job) — one classifier per invocation.
 # The job itself runs INSIDE ml4fp-sbi-tutorial.sif (condor +SingularityImage in the .sub),
 # so this script calls python directly — no nested apptainer.
-# Usage: nsbi_pathB_train.sh <run_name> <numerator_csv> [n_layers] [n_nodes] [lr]
+# Usage: nsbi_pathB_train.sh <run_name> <numerator_csv> [n_layers] [n_nodes] [lr] [max_epochs]
 # Hyperparameters default to the original path-B settings; pass overrides for retrains.
 # Early-stop patience via env CARL_EARLYSTOP_PATIENCE (default 20; models/carl.py).
 # Layout satisfies carl.utils.load_results(<RUN>, <run_name>): data_dir and the
@@ -13,6 +13,7 @@ NUM_CSV=$2
 N_LAYERS=${3:-3}
 N_NODES=${4:-128}
 LR=${5:-1e-3}
+MAX_EPOCHS=${6:-200}
 
 ROOT=/project/atlas/Users/mfernand/SBI_shortcomings
 SUB=$ROOT/asimov-aymptotics-check
@@ -41,5 +42,5 @@ exec python -m nsbi.carl fit \
     --data.batch_size 1024 \
     --data.data_dir "$RUN/$RUN_NAME" \
     --trainer.accelerator gpu --trainer.devices 1 \
-    --trainer.max_epochs 200 \
+    --trainer.max_epochs $MAX_EPOCHS \
     --trainer.logger.init_args.save_dir "$RUN/$RUN_NAME"

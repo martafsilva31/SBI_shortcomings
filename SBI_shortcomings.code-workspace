@@ -4,5 +4,17 @@
 		{ "name": "asimov-aymptotics-check", "path": "asimov-aymptotics-check" },
 		{ "name": "~ global", "path": ".." }
 	],
-	"settings": { "files.exclude": { "output": true, "*.log": true } }
+	"settings": { "files.exclude": { "output": true, "*.log": true } },
+	"tasks": {
+		"version": "2.0.0",
+		"tasks": [
+			{
+				"label": "Open project in Notion",
+				"type": "shell",
+				"command": "\"$BROWSER\" 'https://app.notion.com/p/936ee23aea2e4b029be6beb87edf1153' 2>/dev/null || echo 'Notion: https://app.notion.com/p/936ee23aea2e4b029be6beb87edf1153'",
+				"problemMatcher": [],
+				"presentation": { "reveal": "silent", "close": true }
+			}
+		]
+	}
 }

@@ -1,0 +1,11 @@
+# LaTeX by-products. The PDF is tracked.
+*.aux
+*.fdb_latexmk
+*.fls
+*.log
+*.nav
+*.out
+*.snm
+*.toc
+*.vrb
+*.synctex.gz

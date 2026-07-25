@@ -1,0 +1,312 @@
+%%=============================================================================
+%% beamerthememarta -- reusable talk theme for Marta Silva's weekly meetings
+%%
+%% Built on moloch (the maintained fork of metropolis). Fira Sans body, Fira
+%% Math, one accent colour per project (pink for SBI_shortcomings).
+%%
+%% Engine: lualatex (fontspec + unicode-math are required).
+%% Fonts and packages all live in the CERN texlive tree:
+%%   /cvmfs/sft.cern.ch/lcg/external/texlive/2025
+%%
+%% Three rules the theme enforces, so that every deck built from it reads the
+%% same way:
+%%   1. one message per slide  -- \msg{...}, sits under the frame title
+%%   2. a takeaway sentence    -- \takeaway{...}, pinned at the foot
+%%   3. figures come from files -- \fig{...}, never a pasted bitmap
+%%
+%% Six layouts: title, section divider, figure-with-takeaway, two-column
+%% comparison, question slide, backup divider.
+%%=============================================================================
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{beamerthememarta}[2026/07/21 v1.0 Marta talk theme]
+
+\RequirePackage{etoolbox}
+\RequirePackage{pgfopts}
+
+%%----------------------------------------------------------------- options ---
+%% \usetheme[accent=AD1A72]{marta}          -- accent only, no spaces allowed
+%% \martaset{author=..., venue=..., date=...}  -- the footer fields
+%%
+%% The footer fields are set with \martaset rather than as theme options
+%% because LaTeX strips spaces out of a package option list, which silently
+%% turns "HWW meeting" into "HWWmeeting". accent is a six-digit HTML hex with
+%% no leading '#', so it is safe either way.
+\def\marta@accent{AD1A72}      % Notion pink -- the SBI_shortcomings accent
+\def\marta@author{}
+\def\marta@venue{}
+\def\marta@date{}
+
+\pgfkeys{
+  /marta/.cd,
+  accent/.store in=\marta@accent,
+  author/.store in=\marta@author,
+  venue/.store in=\marta@venue,
+  date/.store in=\marta@date,
+}
+\newcommand{\martaset}[1]{\pgfkeys{/marta/.cd,#1}}
+\ProcessPgfOptions{/marta}
+
+%%-------------------------------------------------------------- base theme ---
+\usetheme[progressbar=frametitle]{moloch}
+\molochset{block=fill, sectionpage=none}
+
+%%------------------------------------------------------------------ colours ---
+\definecolor{martaaccent}{HTML}{\marta@accent}
+\definecolor{martaink}{HTML}{262626}    % body text -- near-black, easier than 000
+\definecolor{martamute}{HTML}{7A7A7A}   % footer, captions, de-emphasis
+\definecolor{martarule}{HTML}{D9D9D9}   % hairlines
+\definecolor{martawarn}{HTML}{B22222}   % placeholders and caveats
+
+\setbeamercolor{normal text}{fg=martaink, bg=white}
+\setbeamercolor{alerted text}{fg=martaaccent}
+\setbeamercolor{structure}{fg=martaaccent}
+
+%% Frame titles: accent text on white with a hairline under them, rather than
+%% moloch's solid bar -- a full-width block of colour on every slide is heavy
+%% on a projector and fights with the figures.
+\setbeamercolor{frametitle}{fg=martaaccent, bg=white}
+\setbeamercolor{framesubtitle}{fg=martamute}
+\setbeamercolor{progress bar}{fg=martaaccent, bg=martarule}
+\setbeamercolor{title}{fg=martaaccent}
+\setbeamercolor{subtitle}{fg=martaink}
+\setbeamercolor{author}{fg=martaink}
+\setbeamercolor{date}{fg=martamute}
+\setbeamercolor{institute}{fg=martamute}
+\setbeamercolor{page number in head/foot}{fg=martamute}
+\setbeamercolor{itemize item}{fg=martaaccent}
+\setbeamercolor{itemize subitem}{fg=martaaccent}
+\setbeamercolor{itemize subsubitem}{fg=martaaccent}
+\setbeamercolor{enumerate item}{fg=martaaccent}
+\setbeamercolor{caption name}{fg=martamute}
+\setbeamercolor{block title}{fg=white, bg=martaaccent}
+\setbeamercolor{block body}{bg=martaaccent!7}
+
+%%-------------------------------------------------------------------- fonts ---
+\RequirePackage{fontspec}
+\RequirePackage{unicode-math}
+\RequirePackage{microtype}
+
+\setsansfont{FiraSans}[
+  Extension      = .otf,
+  UprightFont    = *-Book,
+  ItalicFont     = *-BookItalic,
+  BoldFont       = *-SemiBold,
+  BoldItalicFont = *-SemiBoldItalic,
+  Scale          = 1.0,
+]
+\setmonofont{FiraMono}[Extension=.otf, UprightFont=*-Regular, BoldFont=*-Bold, Scale=0.92]
+\setmathfont{FiraMath-Regular.otf}
+%% \mathrm{...} in Latin Modern next to Fira body text is a visible mismatch.
+\setmathrm{FiraSans}[Extension=.otf, UprightFont=*-Book, BoldFont=*-SemiBold]
+\renewcommand{\familydefault}{\sfdefault}
+
+\setbeamerfont{frametitle}{size=\Large, series=\bfseries}
+\setbeamerfont{framesubtitle}{size=\small, series=\mdseries}
+\setbeamerfont{title}{size=\LARGE, series=\bfseries}
+\setbeamerfont{footline}{size=\scriptsize}
+\setbeamerfont{page number in head/foot}{size=\scriptsize}
+
+%%-------------------------------------------------------------- frame title ---
+%% moloch's frametitle template, minus the coloured bar, plus a hairline.
+\setbeamertemplate{frametitle}{%
+  \nointerlineskip%
+  \begin{beamercolorbox}[wd=\paperwidth, leftskip=1.6ex,
+      rightskip=\the\glueexpr 1.6ex plus 1fil\relax]{frametitle}%
+    \usebeamerfont{frametitle}%
+    \rule{0pt}{2.2ex + \totalheightof{X}}%
+    \insertframetitle%
+    \ifx\insertframesubtitle\@empty\else
+      {\par\usebeamerfont{framesubtitle}\usebeamercolor[fg]{framesubtitle}%
+       \vspace{-0.6ex}\insertframesubtitle}%
+    \fi
+    \vphantom{\rule[-1.0ex]{0pt}{1.0ex}}%
+  \end{beamercolorbox}%
+  \vspace{-0.9ex}%
+  {\color{martarule}\hrule height 0.6pt}%
+  \vspace{1.2ex}%
+}
+
+%%----------------------------------------------------------------- footline ---
+%% "Marta Silva   |   HWW meeting   |   22/07/2026                       12"
+\setbeamertemplate{frame footer}{%
+  \marta@author
+  \ifdefempty{\marta@venue}{}{\hspace{0.9em}\textbar\hspace{0.9em}\marta@venue}%
+  \ifdefempty{\marta@date}{}{\hspace{0.9em}\textbar\hspace{0.9em}\marta@date}%
+}
+
+%%------------------------------------------------------------------- lists ----
+\setbeamertemplate{itemize item}{\small\raise0.15ex\hbox{$\blacktriangleright$}}
+\setbeamertemplate{itemize subitem}{\scriptsize\raise0.15ex\hbox{$\triangleright$}}
+\setbeamertemplate{itemize subsubitem}{\scriptsize\raise0.15ex\hbox{$\cdot$}}
+\setbeamertemplate{caption}{\insertcaption}
+\setbeamertemplate{caption label separator}{}
+
+%%----------------------------------------------------------------- graphics ---
+\RequirePackage{graphicx}
+\RequirePackage{tcolorbox}
+\tcbuselibrary{skins}
+
+%% Rule 3: figures are included from files, never pasted.
+%% \fig[<width fraction>]{<file>}  -- default 0.78 of the text width.
+\newcommand{\fig}[2][0.78]{\includegraphics[width=#1\textwidth]{#2}}
+\newcommand{\figh}[2][0.62]{\includegraphics[height=#1\textheight]{#2}}
+
+%%----------------------------------------------------- rule 1: the message ----
+%% The single message of the slide, printed under the title.
+\newcommand{\msg}[1]{\framesubtitle{#1}}
+
+%%---------------------------------------------------- rule 2: the takeaway ----
+%% One sentence, pinned at the foot of the frame, clear of the footline.
+\newcommand{\takeaway}[1]{%
+  \vfill
+  \begingroup
+  \begin{tcolorbox}[
+      enhanced, sharp corners, boxrule=0pt, left=1.4ex, right=1.4ex,
+      top=1.0ex, bottom=1.0ex,
+      colback=martaaccent!7, colframe=martaaccent!7,
+      borderline west={2.2pt}{0pt}{martaaccent},
+    ]
+    \small #1
+  \end{tcolorbox}
+  \endgroup
+  \vspace{0.1cm}%
+}
+
+%% An open question for the room -- a proposal, not an asserted result.
+\newcommand{\ask}[1]{%
+  \vfill
+  \begingroup
+  \begin{tcolorbox}[
+      enhanced, sharp corners, boxrule=1pt, left=1.4ex, right=1.4ex,
+      top=1.0ex, bottom=1.0ex,
+      colback=martaaccent!5, colframe=martaaccent,
+    ]
+    {\color{martaaccent}\bfseries Ask:}\ \small #1
+  \end{tcolorbox}
+  \endgroup
+  \vspace{0.1cm}%
+}
+
+%% A caveat in the same slot, for anything not yet verified.
+\newcommand{\caveat}[1]{%
+  \vfill
+  \begingroup
+  \begin{tcolorbox}[
+      enhanced, sharp corners, boxrule=0pt, left=1.4ex, right=1.4ex,
+      top=1.0ex, bottom=1.0ex,
+      colback=martawarn!6, colframe=martawarn!6,
+      borderline west={2.2pt}{0pt}{martawarn},
+    ]
+    \small #1
+  \end{tcolorbox}
+  \endgroup
+  \vspace{0.1cm}%
+}
+
+%% Inline accent for the one number that matters on a slide.
+\newcommand{\num}[1]{\textcolor{martaaccent}{\textbf{#1}}}
+
+%%============================================================== layout 1 ======
+%% Title page.
+\setbeamertemplate{title page}{%
+  \vspace*{0.9cm}
+  {\usebeamerfont{title}\usebeamercolor[fg]{title}\inserttitle\par}
+  \vspace{0.45cm}
+  {\color{martarule}\hrule height 1.2pt}
+  \vspace{0.55cm}
+  \ifx\insertsubtitle\@empty\else
+    {\usebeamercolor[fg]{subtitle}\large\insertsubtitle\par\vspace{0.55cm}}%
+  \fi
+  {\usebeamercolor[fg]{author}\large\insertauthor\par}
+  \vspace{0.30cm}
+  {\usebeamercolor[fg]{institute}\normalsize\insertinstitute\par}
+  \vspace{0.30cm}
+  {\usebeamercolor[fg]{date}\normalsize\insertdate\par}
+}
+
+%%============================================================== layout 2 ======
+%% Section divider: the section name, large, in the accent, on an empty frame.
+\newcommand{\dividerframe}[2][]{%
+  \begin{frame}[plain, noframenumbering]
+    \vspace*{1.4cm}
+    {\usebeamerfont{title}\color{martaaccent}#2\par}
+    \ifstrempty{#1}{}{%
+      \vspace{0.5cm}{\color{martamute}\large #1\par}}%
+  \end{frame}%
+}
+
+%%============================================================== layout 3 ======
+%% Figure with a takeaway line.
+%%   \figframe{<frame title>}{<message>}{<file>}{<takeaway>}
+%% Optional argument sets the graphic height (fraction of \textheight).
+\newcommand{\figframe}[5][0.56]{%
+  \begin{frame}{#2}
+    \msg{#3}
+    \centering
+    \includegraphics[height=#1\textheight]{#4}
+    \par
+    \raggedright
+    \takeaway{#5}
+  \end{frame}%
+}
+
+%%============================================================== layout 4 ======
+%% Two-column comparison.
+%%   \begin{comparison}{<left head>}{<right head>}
+%%     left material \switchcol right material
+%%   \end{comparison}
+\newenvironment{comparison}[2]{%
+  \def\marta@lefthead{#1}\def\marta@righthead{#2}%
+  \begin{columns}[T, onlytextwidth]
+  \begin{column}{0.475\textwidth}
+  {\color{martaaccent}\bfseries\marta@lefthead\par}
+  \vspace{0.25cm}
+}{%
+  \end{column}
+  \end{columns}
+}
+\newcommand{\switchcol}{%
+  \end{column}\hfill
+  \begin{column}{0.475\textwidth}
+  {\color{martaaccent}\bfseries\marta@righthead\par}
+  \vspace{0.25cm}
+}
+
+%%============================================================== layout 5 ======
+%% Question slide: one question, centred, nothing else competing with it.
+%%   \questionframe[<optional sub-line>]{<the question>}
+\newcommand{\questionframe}[2][]{%
+  \begin{frame}[plain, noframenumbering]
+    \centering
+    \vspace*{\fill}
+    {\usebeamerfont{title}\color{martaaccent}#2\par}
+    \ifstrempty{#1}{}{\vspace{0.7cm}{\color{martaink}\large #1\par}}%
+    \vspace*{\fill}
+  \end{frame}%
+}
+
+%%============================================================== layout 6 ======
+%% Backup divider. Stops the page counter, so "12 / 12" stays honest.
+\RequirePackage{appendixnumberbeamer}
+\newcommand{\backupdivider}[1][Backup]{%
+  \appendix
+  \dividerframe{#1}%
+}
+
+%%-------------------------------------------------------------- placeholder ---
+%% A frame whose content is not yet fixed, and what it is waiting on. Loud on
+%% purpose: nothing ships with one of these still in it.
+\newcommand{\todoframe}[2]{%
+  \begin{frame}{#2}
+    \vspace*{\fill}
+    \begin{tcolorbox}[enhanced, sharp corners, boxrule=1.1pt,
+        colback=martawarn!5, colframe=martawarn, left=1.6ex, right=1.6ex,
+        top=1.2ex, bottom=1.2ex]
+      {\color{martawarn}\bfseries PLACEHOLDER}\\[0.35em]
+      \small\raggedright #1
+    \end{tcolorbox}
+    \vspace*{\fill}
+  \end{frame}%
+}
+
+\endinput

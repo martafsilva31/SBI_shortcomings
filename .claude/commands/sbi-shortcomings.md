@@ -12,9 +12,10 @@ frequentist hypothesis testing. Your job is to help implement, validate, and ext
 NSBI shortcomings in the non-asymptotic regime, using off-shell Higgs production as a test case.
 
 Before any task, read:
-1. `docs/context.md` — physics setup, signal model, key finding, proposed fixes
-2. `docs/plan.md` — the roadmap (current focus + next + blockers)
-3. The relevant existing `docs/<task>.md` study-notes for this task
+1. The container `SBI_shortcomings/CLAUDE.md` — layout, environment, and the **current** key
+   findings (e.g. the 2026-07-10 width-ratio result); this command carries no findings snapshot
+2. `docs/context.md` — physics setup, signal model, key finding, proposed fixes
+3. The task's Notion task / plan-step page — its worklog, Next action, and any related Logbook entries
 
 ## Domain Expertise
 
@@ -30,11 +31,14 @@ p_SBI(x|μ) = [(μ-√μ) ν_S p_S(x) + √μ ν_SBI p_SBI(x) + (1-√μ) ν_B p
 
 **Yields at μ=1**: SIG 0.31 / BKG 5.95 / INT -0.61 / SBI 5.66 at 1 fb⁻¹
 
-**Histogram analysis**: M₄ℓ binning, ℒ = ∏_bins 𝒫(n|ν). Satisfies Asimov ≈ median(toys).
+**Histogram analysis**: M₄ℓ binning, ℒ = ∏_bins 𝒫(n|ν).
 
 **NSBI analysis**: 2 CARL classifiers (PyTorch Lightning), p_ref = p_bkg.
 ℒ = 𝒫(n|ν) × ∏_events [p_SBI(x|μ)/p_ref(x)].
-Fails Asimov ≈ median(toys) at 1–10 fb⁻¹; converges only at ~1000 fb⁻¹.
+
+**Current findings** (histogram vs. NSBI closure, width ratios, …): not snapshotted here —
+read the container `CLAUDE.md` § Physics context for the up-to-date key result
+(e.g. the 2026-07-10 width-ratio measurement).
 
 **Toy generation**: w_toy ~ Poisson(λ=w) per event. 100–200 toys per luminosity point.
 
@@ -44,13 +48,14 @@ Fails Asimov ≈ median(toys) at 1–10 fb⁻¹; converges only at ~1000 fb⁻¹
 
 ## Workflow
 
-1. Check `docs/plan.md` — pick the next in-progress or backlog item.
+1. Check the Notion board (Tasks + Plan Steps) — pick the next Now item.
 2. Read the relevant notebook or script in `asimov-aymptotics-check/`.
 3. Implement the change with minimal diff.
 4. Validate: run `python -m py_compile <file>` for Python files; run the relevant notebook or script.
-5. Keep the running log in `docs/<task>.md`; on completion clean it into a summary
-   study-note, publish the Notion Logbook entry, set the Notion Task Done, and
-   update `docs/plan.md`'s focus/next only if the roadmap moved.
+5. Append the dated worklog to the task's Notion task / plan-step page (append-only,
+   plain markdown); on completion publish the Notion Logbook entry via `/writeup`
+   (the only blessed path — provenance-first, Trust = Provisional). `/workend` handles
+   worklog snapshot export and board upkeep.
 
 ## Critical Validation Checks
 
@@ -65,7 +70,7 @@ Fails Asimov ≈ median(toys) at 1–10 fb⁻¹; converges only at ~1000 fb⁻¹
 - No Athena, no ATLAS environment — this is pure Python/PyTorch
 - Dataset stays on CERNBox; never commit `.root`, `.h5`, `.npz` data files
 - Never commit model checkpoints unless explicitly asked — they are large and gitignored
-- Study-notes always go to `SBI_shortcomings/docs/<task>.md` (container level), never inside `asimov-aymptotics-check/`
+- Worklogs live on the Notion task / plan-step pages; the only local copies are the `/workend` auto-exported snapshots under `SBI_shortcomings/docs/worklogs/` (container level, read-only) — never inside `asimov-aymptotics-check/`
 - Do not invent physics results — if a script fails, report it factually and add a fix task
 - quickFit / RooFitUtils are not used in this project
 
@@ -81,4 +86,4 @@ Examples:
 
 - Code changes: minimal diffs, Python 3, no hardcoded paths
 - Results: NLL scan plot comparing Asimov (dashed orange) vs. median(toys) (solid blue) ± 1σ band
-- Logbook entries: What changed / Results / Issues / Next
+- Logbook entries: via `/writeup` only (it owns the template; Trust = Provisional)

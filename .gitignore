@@ -15,6 +15,9 @@ data/
 *.png
 *.eps
 
+# ...except meeting decks, which are versioned alongside the code that made them
+!docs/presentations/**/*.pdf
+
 # ── Python ────────────────────────────────────────────────────────────────
 __pycache__/
 *.pyc

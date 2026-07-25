@@ -83,7 +83,41 @@ p_SBI(x|μ) = [(μ-√μ) ν_S p_S(x) + √μ ν_SBI p_SBI(x) + (1-√μ) ν_B p
 - Toy generation: w_toy ~ Poisson(λ=w) for each event weight
 - Validation: 100–200 toy pseudo-experiments per luminosity point
 
-## Key finding (first meeting, 2026-05-20)
+## Key finding
+
+> **Revised 2026-07-25.** The 2026-07-21 audit contradicted parts of the original statement.
+> The historical version is kept below for the record; read the current statement first.
+
+### Current statement (2026-07-25)
+
+The Asimov dataset is by construction the *mean* dataset, and −2lnL is affine in the observed
+counts. So the expectation over toys of −2lnL(μ) equals the Asimov curve plus a μ-independent
+constant — exactly, at any sample size, with no asymptotic assumption. This was verified on the
+project's own tensors to Monte-Carlo noise, for both the histogram and the exact-ratio unbinned
+analysis. The *median* obeys no such identity: it lies strictly above the Asimov curve at every μ
+even in the perfect asymptotic limit. An Asimov-versus-median overlay therefore cannot agree by
+construction, which reframes the project's original question rather than answering it.
+
+Three earlier claims did not survive the audit:
+
+- **The histogram is not a clean control.** Where the 1σ width ratio is defined it runs 0.92–1.16
+  against a large-sample expectation of 1.185 — measurably non-asymptotic up to ~1000 fb⁻¹. At
+  1–10 fb⁻¹ it is not defined at all: the curves never reach the threshold inside the μ window
+  (2000 of 2000 toys open at 1 fb⁻¹), which is precisely the regime the old headline described.
+- **The exact-vs-network contrast is confounded.** The NSBI network path takes its total rate from
+  `ggzz4l_xs.json` while the toys are thrown from the event sample. The two agree at μ=1 but differ
+  by 0.19% at μ=0 — enough to move the Asimov best fit from 1.000 to 0.175 and inflate the Asimov
+  interval by 34% at 300 fb⁻¹, and it does not wash out with luminosity. Feeding exact
+  matrix-element ratios through the same path still gives 0.175, so the normalisation is the cause,
+  not the network. Every exact-vs-network number is pending re-measurement.
+- **Provenance of 0.874.** That width ratio is our own re-measurement of Tae's tensors. His slides
+  carry no Asimov-versus-median numbers at all.
+
+Open since the 2026-07-22 HWW meeting (asked, not resolved): whether to subtract each toy's own
+best fit before comparing, and whether curves or quantiles are the right comparison. Every
+width-ratio number downstream carries both caveats.
+
+### Historical statement (first meeting, 2026-05-20 — superseded)
 
 At 1–10 fb⁻¹, the NSBI median(toys) diverges significantly from the Asimov prediction:
 the median-of-toys NLL curve is systematically steeper/narrower than the Asimov curve, i.e. each

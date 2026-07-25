@@ -261,3 +261,47 @@ tensors). What was established:
 - NSBI direction check is single-lumi (300 fb⁻¹); low-lumi NSBI points come with path A/B.
 - Proposed (not applied): fix inverted direction sentence in project `CLAUDE.md`; add
   `PYTHONNOUSERSITE=1` to setup.sh instructions; clean corrupt `~/.local` site-packages.
+
+### 2026-07-16 — from-scratch redo (plan approved by Marta; notebook rewritten)
+
+*(Note on the name: earlier entries call the author "Tei"; Marta corrected the name to **Tae**
+on 2026-07-16 — new text uses Tae.)*
+
+Everything above this line describes the old 200-toy reproduction and its conventions; it is kept
+as history. The study was redone from scratch today with a protocol that fixes the problems Marta
+raised (toy count, per-toy best-fit subtraction, luminosity grid, band meaning) plus the ones the
+review surfaced. `notebooks/histogram_reproduction.ipynb` was **rewritten in place** (the old
+executed state survives in git before commit `adf067b`'s successor).
+
+**Protocol.** Per toy, t(μ) = −2[lnL(μ) − lnL(μ̂)] with the per-toy best fit subtracted; the
+Asimov-property test is *measured vs predicted quantiles*: in the large-sample limit t(μ) follows
+a noncentral χ² (1 dof) with noncentrality t_A(μ), so the median and 16/84% quantiles of t across
+toys are compared against that distribution's quantiles at every μ. The known 0.455 offset at
+μ = 1 and the 1.185 width factor are *inside the prediction* — no convention war, no common-offset
+shifts. 2000 toys (one random stream each, master seed 42), 11 luminosities {1, 10, 30, 100, 140,
+200, 300, 500, 700, 1000, 3000} fb⁻¹, μ ∈ [0, 4] with 161 points (range kept at Tae's on Marta's
+decision; open intervals reported as open). Compute in `scripts/asimov_scan.py` (the one new file
+of the redo); the notebook only loads, summarises, plots.
+
+**Closure.** The legacy configuration (200 toys, single seed block, 101-point grid, Tae's
+float32 grid values) reproduces the pre-redo tensors to float32 rounding (max |Δ| ≤ 4×10⁻³ on
+curves of magnitude 10⁴–10⁵, ≈ 2×10⁻⁷ relative) and the published numbers exactly: width ratios
+0.990 / 1.052 at 100/1000 fb⁻¹, Asimov μ̂ = 1.000, open intervals at 1–10 fb⁻¹. The comparator
+machinery passes its self-test on ideal parabolic likelihoods (0.456 vs 0.455; 1.177 vs 1.185
+within grid resolution).
+
+**Results (2000 toys).** Asimov μ̂ = 1.000 at all 11 points. The sharper toy statistics change
+the headline: the median-curve width ratio (large-sample expectation **1.185**, not 1) is
+0.936 ± 0.016 at 100 fb⁻¹, 0.972 ± 0.018 at 300, 1.091 ± 0.020 at 1000, and reaches
+1.157 ± 0.017 only at 3000 fb⁻¹ — i.e. **the histogram analysis is measurably below its
+large-sample behaviour everywhere up to ~1000 fb⁻¹**, a departure invisible at the old ±0.05
+precision (where "consistent with 1" was the best that could be said, against the wrong
+reference value). The measured median of t(1) rises from 0.05 (1 fb⁻¹) through 0.71 (500 fb⁻¹)
+back to 0.54 (3000 fb⁻¹) against a flat predicted 0.455; the 68% interval covers μ = 1 for 92%
+of toys at 1 fb⁻¹ (over-coverage) and only ~0.60 at 200–700 fb⁻¹ (the known interference rate
+degeneracy). The fraction of toys with μ̂ = 0 falls from ~11–15% (1–30 fb⁻¹) to 0 above
+700 fb⁻¹. All numbers with definitions in the notebook's §4 table; errata table in §7.
+
+**Files.** `scripts/asimov_scan.py` (engine + downloader + statistic definitions, importable by
+both notebooks); `output/asimov_scan/{hist,closure}/` (gitignored scans);
+`notebooks/histogram_reproduction.ipynb` (rewritten, executed).

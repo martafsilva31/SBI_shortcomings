@@ -120,3 +120,111 @@ failed sbi checkpoints).
 2. Add the extended Poisson term (prep §2). Falsifiable predictions: NLL(0) ≠ 0; Asimov μ̂ → 1.000.
 3. Luminosity sweep 1/10/100/1000 fb⁻¹ — the NSBI counterpart of the histogram notebook, expecting
    Asimov ≠ median(toys) at 1–10 fb⁻¹ (chunk-free toy NLL via prep §3).
+
+### 2026-07-16 — from-scratch redo: checkpoints arrived, NSBI reproduced three ways (plan approved by Marta)
+
+*(Note on the name: earlier entries in this file call the author "Tei"; Marta corrected the name
+to **Tae** on 2026-07-16 — new text uses Tae.)*
+
+**The checkpoints arrived.** Marta supplied the CERNBox link (token `Shv8zta4oZ1aOL4`); the share
+was mirrored to `asimov-aymptotics-check/run/h4l/` (29 files, 7.9 GB, sizes verified; training
+splits skipped) by `scripts/asimov_scan.py --download-checkpoints`. Contents per network
+(`sig_over_bkg`, `sbi_over_bkg`): 6 checkpoints, `config.yaml`, `hparams.yaml`, `metrics.csv`
+(so the hyperparameters previously believed unrecoverable are now on disk: 16 layers × 1024
+nodes), the train/val/test splits, the scaler, and `fit-carl-4l.sh`.
+
+**Protocol.** Same redo protocol as the histogram note (this date, there): statistic
+t(μ) = −2[lnL(μ) − lnL(μ̂)] per toy; comparison of measured vs predicted (noncentral χ², 1 dof,
+noncentrality = Asimov t_A(μ)) quantiles; 2000 toys, one stream per toy; μ ∈ [0, 4] × 161;
+11 luminosities 1–3000 fb⁻¹; **event-count term included everywhere**. All scans by
+`scripts/asimov_scan.py` on Tae's own test split (576 265 events, Σw = 5.6565 fb = the SBI
+cross-section); notebook = `notebooks/nsbi_reproduction.ipynb` (rewritten from scratch).
+
+**Finding 1 — the "ln 2 floor" was never a failed training.** From the exact matrix-element
+ratio evaluated on Tae's validation events: the best achievable balanced classification loss for
+SBI-vs-BKG is **0.692401**, only 7.5×10⁻⁴ below ln 2 = 0.693147 (exact-ratio ROC area 0.513 —
+the two samples are near-indistinguishable event by event). Tae's network reached 0.692582 ≈ 76%
+of that achievable margin; our path-B `sig_over_bkg` reached 97% of its own achievable margin
+(0.41917 vs 0.41116 optimal). Every "stalled at ln 2" training, his and ours, was in fact close
+to optimal — invisible at the 2-decimal precision of checkpoint filenames.
+
+**Finding 2 — the shared `sig_over_bkg` is from the wrong channel (erratum).** Its
+`config.yaml` records numerator/denominator = `zz2l2v/ggZZ_{sig,bkg}` with 10 input features
+including `met`/`met_phi`, contradicting `fit-carl-4l.sh` in the same share (16 features, 4ℓ
+CSVs). It cannot process 4ℓ events, so it cannot be the network behind the committed 300 fb⁻¹
+scans, and **a bit-exact reproduction of those scans is impossible with the shared material**.
+The nsbi-nn runs therefore use his `sbi_over_bkg` + our near-optimal path-B `sig_over_bkg`
+(hybrid, documented in the notebook), plus a variant with the exact r_sig that isolates his
+sbi network's contribution.
+
+**Finding 3 — with the exact ratio, there is no dramatic NSBI failure.** The exact-ratio
+unbinned analysis (a perfect network) behaves like the histogram: Asimov μ̂ = 1.000 at all 11
+luminosities; the median-curve width ratio rises from ~0.96 (30 fb⁻¹) to the asymptotic 1.185
+by ~3000 fb⁻¹; coverage dips to ~0.6 at 100–1000 fb⁻¹ (the known interference rate degeneracy,
+not an NSBI effect). The slide-7 effect is therefore **not intrinsic to unbinned statistics at
+these event counts**.
+
+**Finding 4 — the network version distorts the comparison, in the opposite direction to the
+slides.** With the network ratio the Asimov interval narrows spuriously (common-mode sub-percent
+errors in ln r × ~1700 events at 300 fb⁻¹) while the toys spread around it: median-curve width
+ratio up to 2.09 ± 0.04 at 300 fb⁻¹ (vs 1.17 exact, expectation 1.185), coverage down to 0.53.
+Under Tae's own raw-median convention at 300 fb⁻¹ the closest-faithful configuration gives ratio
+**1.38 (median wider than Asimov)** against his committed **0.874 (narrower)** — the direction
+of his headline flips with working ingredients.
+
+**Finding 5 — the missing event-count term is quantified (erratum).** Without it the statistic
+has no normalisation anchor and the shape carries almost no information (ROC 0.513): the
+exact-ratio shape-only Asimov best fit moves from **μ̂ ≈ 0** (cross-section-table
+normalisation) to **μ̂ = 1.000** (sample normalisation) — a sub-percent convention change moves
+the minimum across the entire range. His committed μ̂_A = 0.920 sits inside that fragility. With
+the term included the exact-ratio Asimov best fit is 1.000 everywhere, by construction.
+
+**Follow-up check (same day, prompted by Marta).** Suspecting the wrong share had been
+downloaded, Tae's *dataset* share (token `AeKNoWslVzwmAdt` — the one the CSVs came from on
+09 Jul) was fully listed: 124 entries, training CSVs for both channels (`zz2l2v/`, `zz4l/`,
+one `analyzed.csv` per component) plus 2 × 48 observed pseudo-experiment CSVs at μ = 0.4 and
+μ = 2.5 — **no checkpoints or run directories anywhere**. Its `zz4l/ggZZ_*/analyzed.csv` are
+byte-identical in size and header to the local `data/zz4l/ggzz4l_sm/ggzz4l_*.csv`. Conclusion:
+the download was not wrong — the checkpoint share is the only source of checkpoints, and the
+2ℓ2ν `sig_over_bkg` is a training-side mix-up on Tae's end (both channels' `analyzed.csv` sit
+side by side in his data area; his job was launched with the 2ℓ2ν paths). Since
+`fit-carl-4l.sh` + `config.yaml` fully specify his intended 4ℓ recipe (16 features, 16 layers ×
+1024 nodes, lr 1e-4, batch 1024, seed 42, sample_size 10⁷, early-stop patience 20) and the 4ℓ
+CSVs are already local, the missing network can be trained with his exact recipe — one condor
+GPU job — **proposed, awaiting Marta's approval** (retraining is explicitly outside the redo's
+approved scope). New material noted for later: the observed_mu0p4 / observed_mu2p5 pseudo-data.
+
+### 2026-07-16 (evening) — sig_over_bkg retrained with Tae's exact recipe (approved); his committed result reproduced and explained
+
+- **Training** (condor cluster 5106594, 1 GPU + 1 CPU, 2.2 h, normal termination): Tae's exact
+  4ℓ recipe — 16 features, 16 layers × 1024 nodes, lr 10⁻⁴, batch 1024, seed 42, early-stop
+  patience 20 (max 500 epochs; stopped at 60). Output `output/nsbi-pathB/h4l/sig_over_bkg_taerecipe/`.
+  One documented no-op deviation: his config's `sample_size: 10⁷` cap (our datamodule version has
+  no such argument; the CSVs hold fewer rows). New optional `max_epochs` argument added to
+  `scripts/nsbi_pathB_train.sh` (default unchanged).
+- **Best val_loss 0.419194 — statistically identical to the 3×128 network's 0.419166** (both 97%
+  of the achievable margin 0.411164): on this task the architecture is irrelevant to the loss,
+  and the remaining margin is not a capacity limit.
+- **But the two same-loss networks distort the analysis in qualitatively different ways** (full
+  sweeps, 2000 toys, same events/toys): the Tae-recipe network biases every best fit low (Asimov
+  μ̂ = 0.875 at all luminosities; fraction of toys whose 68% interval contains μ = 1 falls
+  monotonically to 0.42 at 3000 fb⁻¹), while the 3×128 network biases high (μ̂ = 1.025) and
+  instead inflates the toy spread (median-curve width ratio up to 2.09 ± 0.04 at 300 fb⁻¹).
+  Both are kept in the notebook (§5–§6) as the sharpest demonstration that the discrepancy is a
+  property of the particular trained network, not of its loss and not of the event count.
+- **Tae's committed 300 fb⁻¹ result is now closely reproduced — by his architecture only.**
+  Under his exact statistic/convention/toys, his `sbi_over_bkg` + the Tae-recipe `sig_over_bkg`
+  give median/Asimov width ratio **0.897** (his committed: **0.874**; Asimov widths 1.30 vs 1.27),
+  and shape-only Asimov μ̂ = 1.000. The same configuration with the same-loss 3×128 network gives
+  **1.38** — opposite direction. Conclusion for the finding-4 entry above: the direction measured
+  there was the 3×128 accident; the slide-7 effect follows Tae's particular network, and neither
+  direction reflects unbinned statistics (the exact ratio shows none of it).
+- Notebook regenerated and re-executed with the fifth scan set (`nsbi-nn (3×128 sig)`); §§2, 6, 7
+  and the errata updated accordingly.
+
+**Files.** Engine `scripts/asimov_scan.py` (also the downloader); scans under
+`output/asimov_scan/{nsbi_exact_testsplit,nsbi_nn,nsbi_nn_sigexact,nsbi_nn_anchor300,`
+`nsbi_exact_shapeonly300,nsbi_exact_shapeonly300_samplenorm}/` (gitignored);
+notebook `notebooks/nsbi_reproduction.ipynb` (definitions → network verdict → exact vs nn
+measurements → decomposition → Tae comparison → errata → reproduce). Checkpoints in
+`asimov-aymptotics-check/run/h4l/` (gitignored `run/`).
