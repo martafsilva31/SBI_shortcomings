@@ -11,7 +11,6 @@ SBI_shortcomings/
   .claude/commands/sbi-shortcomings.md ← expert slash command
   docs/context.md                      ← physics goal, methods, key finding
   docs/plan.md                         ← roadmap (focus + next + blockers + refs)
-  docs/worklogs/<slug>.md              ← read-only worklog snapshots (AUTO-EXPORTED by /workend)
   asimov-aymptotics-check/             ← sub-repo (gitignored; independent git)
     ← PyTorch Lightning training + analysis code
     ← dataset accessed via CERNBox (not committed)
@@ -47,9 +46,7 @@ No ATLAS Athena or lsetup required.
 ## Worklogs rule
 
 Worklogs are Notion-native: each task's dated, append-only running log lives on its
-Notion task / plan-step page — per-task `docs/<task>.md` running logs are retired.
-`/workend` auto-exports read-only snapshots to `docs/worklogs/<slug>.md` (headed
-AUTO-EXPORTED, never hand-edited), at the container level — never inside the sub-repo.
+Notion task / plan-step page — per-task `docs/<task>.md` running logs are retired, and there is no local copy of the worklog.
 Logbook entries go via `/writeup` only. The discrete task list + status live in Notion
 Tasks; `docs/plan.md` is the roadmap. No daily logbook.
 

@@ -33,7 +33,6 @@ cd asimov-aymptotics-check
 
 - `docs/context.md` — physics goal, signal model, datasets, key finding, proposed fixes
 - `docs/plan.md` — roadmap (current focus + next + blockers + refs)
-- `docs/worklogs/` — read-only exports of the Notion worklogs (the worklog lives on the Notion task page)
 
 ## Team
 
