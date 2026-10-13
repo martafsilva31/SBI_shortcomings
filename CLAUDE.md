@@ -1,14 +1,14 @@
 # SBI_shortcomings — Claude Code Instructions
 
 > Container repo. See `asimov-aymptotics-check/` for code-level conventions.
-> Expert slash command: `/sbi-shortcomings` — invoke when working anywhere under this container.
+> Expert skill (user level, `~/.claude/skills/sbi-shortcomings/`): `/sbi-shortcomings` — loads when working anywhere under this container.
+> Status: Paused (Projects database; workspace CLAUDE.md §6). Nothing runs here unless Marta asks.
 > Read the global instructions at `../CLAUDE.md` for workspace-wide rules.
 
 ## Project layout
 
 ```
 SBI_shortcomings/
-  .claude/commands/sbi-shortcomings.md ← expert slash command
   docs/context.md                      ← physics goal, methods, key finding
   docs/plan.md                         ← roadmap (focus + next + blockers + refs)
   asimov-aymptotics-check/             ← sub-repo (gitignored; independent git)
@@ -46,7 +46,7 @@ No ATLAS Athena or lsetup required.
 ## Worklogs rule
 
 Worklogs are Notion-native: each task's dated, append-only running log lives on its
-Notion task / plan-step page — per-task `docs/<task>.md` running logs are retired, and there is no local copy of the worklog.
+Notion task page — per-task `docs/<task>.md` running logs are retired, and there is no local copy of the worklog.
 Logbook entries go via `/writeup` only. The discrete task list + status live in Notion
 Tasks; `docs/plan.md` is the roadmap. No daily logbook.
 
