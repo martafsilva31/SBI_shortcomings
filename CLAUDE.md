@@ -45,9 +45,9 @@ No ATLAS Athena or lsetup required.
 
 ## Worklogs rule
 
-Worklogs are Notion-native: each task's dated, append-only running log lives on its
-Notion task page — per-task `docs/<task>.md` running logs are retired, and there is no local copy of the worklog.
-Logbook entries go via `/writeup` only. The discrete task list + status live in Notion
+Worklogs are Notion-native: each task's dated Log lives on its Notion task page, written
+once a day by the morning routine — per-task `docs/<task>.md` running logs are retired, and there is no local copy of the worklog.
+Logbook entries go via `/writeup` only, when Marta asks. The discrete task list + status live in Notion
 Tasks; `docs/plan.md` is the roadmap. No daily logbook.
 
 ## Physics context
